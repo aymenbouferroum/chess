@@ -61,6 +61,23 @@ class TargetPractice {
     });
   }
 
+  botPlay(dt, timer) {
+    if (this.done) return;
+    // Bot shoots at closest target with 70% accuracy
+    if (this.targets.length > 0 && timer > 0.2) {
+      const t = this.targets[0];
+      const w = 700;
+      const h = 460;
+      const gx = (1280 - w) / 2;
+      const gy = (800 - h) / 2;
+      const lx = t.x + 20 + (gx + 20);
+      const ly = t.y + 75 + (gy + 95);
+      if (Math.random() < 0.7) {
+        this.handleClick(lx, ly);
+      }
+    }
+  }
+
   handleClick(x, y) {
     if (this.done) return;
     const w = 700;

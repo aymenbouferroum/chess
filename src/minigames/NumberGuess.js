@@ -48,6 +48,20 @@ class NumberGuess {
     }
   }
 
+  botPlay(dt, timer) {
+    if (this.done) return;
+    if (!this.botMin) this.botMin = 1;
+    if (!this.botMax) this.botMax = this.maxNum;
+
+    if (timer > 0.5 && this.guesses.length < this.maxGuesses) {
+      // Binary search
+      const guess = Math.floor((this.botMin + this.botMax) / 2);
+      if (guess >= this.botMin && guess <= this.botMax) {
+        this.makeGuess(guess);
+      }
+    }
+  }
+
   makeGuess(num) {
     if (this.done) return;
     const result = num === this.target ? 'correct' : (num < this.target ? 'low' : 'high');

@@ -74,8 +74,10 @@ class MiniGameManager {
 
     const difficulty = MiniGameManager.calculateDifficulty(attacker, defender, boardPos);
     this.isDuel = MiniGameManager.isDuel(attacker, defender);
+    this.isAIAttacking = isAIAttacking;
     this.attackerPiece = attacker;
     this.defenderPiece = defender;
+    this.botTimer = 0;
 
     const totalWeight = this.allGames.reduce((s, g) => s + g.weight, 0);
     let r = Math.random() * totalWeight;
@@ -109,6 +111,14 @@ class MiniGameManager {
 
     const dt = 1 / 60;
     this.currentGame.update(dt);
+
+    // Bot AI plays the minigame when AI is attacking
+    if (this.isAIAttacking && !this.currentGame.done) {
+      this.botTimer += dt;
+      if (this.currentGame.botPlay) {
+        this.currentGame.botPlay(dt, this.botTimer);
+      }
+    }
 
     const ctx = this.overlayCtx;
     const ox = this.overlayX;

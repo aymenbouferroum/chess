@@ -32,6 +32,17 @@ class TimingStrike {
     if (this.pos < 0) { this.pos = 0; this.direction = 1; }
   }
 
+  botPlay(dt, timer) {
+    if (this.done) return;
+    if (this.waitingForStrike) {
+      // Bot clicks when marker is in the green zone (center ±15)
+      const center = 50;
+      if (Math.abs(this.pos - center) < 18) {
+        if (Math.random() < 0.7) this.handleClick(0, 0);
+      }
+    }
+  }
+
   handleClick(x, y) {
     if (this.done) return;
     if (this.waitingForStrike) {

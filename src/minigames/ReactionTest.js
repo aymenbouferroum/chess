@@ -48,6 +48,14 @@ class ReactionTest {
     }
   }
 
+  botPlay(dt, timer) {
+    if (this.done) return;
+    if (this.state === 'ready') {
+      // Bot has fast reaction with 85% success rate
+      if (Math.random() < 0.85) this.handleClick(0, 0);
+    }
+  }
+
   handleClick(x, y) {
     if (this.done) return;
 

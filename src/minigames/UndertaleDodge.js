@@ -253,6 +253,36 @@ class UndertaleDodge {
     }
   }
 
+  botPlay(dt, timer) {
+    if (this.done || !this.running) return;
+    // Simple dodge AI: move away from nearest bullet
+    let nearest = null;
+    let minDist = Infinity;
+    for (const b of this.bullets) {
+      const dx = this.playerX - b.x;
+      const dy = this.playerY - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = b;
+      }
+    }
+    if (nearest) {
+      const arena = { x: 200, y: 140, w: 240, h: 200 };
+      const dx = this.playerX - nearest.x;
+      const dy = this.playerY - nearest.y;
+      const speed = 180 * dt;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        this.playerX += (dx > 0 ? speed : -speed);
+      } else {
+        this.playerY += (dy > 0 ? speed : -speed);
+      }
+      // Clamp to arena
+      this.playerX = Math.max(arena.x + this.playerSize, Math.min(arena.x + arena.w - this.playerSize, this.playerX));
+      this.playerY = Math.max(arena.y + this.playerSize, Math.min(arena.y + arena.h - this.playerSize, this.playerY));
+    }
+  }
+
   handleClick(x, y) {}
 
   cleanup() {

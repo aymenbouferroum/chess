@@ -35,6 +35,15 @@ class PowerMeter {
     }
   }
 
+  botPlay(dt, timer) {
+    if (this.done || this.attempts >= this.maxAttempts) return;
+    const minTarget = 30 + this.difficulty * 10;
+    const maxTarget = 90 - (5 - this.difficulty) * 5;
+    if (this.power >= minTarget && this.power <= maxTarget) {
+      if (Math.random() < 0.75) this.handleClick(0, 0);
+    }
+  }
+
   handleClick(x, y) {
     if (this.done || this.attempts >= this.maxAttempts) return;
     this.attempts++;

@@ -90,6 +90,57 @@ class DodgeFalling {
     document.removeEventListener('keyup', this.keyUp);
   }
 
+  botPlay(dt, timer) {
+    if (this.done) return;
+    const speed = 250 * dt;
+    const playerLeft = this.playerX - 12;
+    const playerRight = this.playerX + 12;
+
+    // Find dangerous blocks (above player and falling)
+    let threatLeft = 0;
+    let threatRight = 0;
+    let nearestThreat = null;
+    let minThreatDist = Infinity;
+
+    for (const b of this.blocks) {
+      if (b.y < 0 || b.y > 260) continue;
+      const blockLeft = b.x;
+      const blockRight = b.x + b.w;
+      const overlap = blockLeft < playerRight && blockRight > playerLeft;
+      const dist = 240 - b.y;
+      if (overlap && dist < minThreatDist) {
+        minThreatDist = dist;
+        nearestThreat = b;
+      }
+      // Count threats on each side for general danger
+      if (b.y > 100 && b.y < 260) {
+        if (blockRight < this.playerX) threatLeft++;
+        else if (blockLeft > this.playerX) threatRight++;
+      }
+    }
+
+    if (nearestThreat) {
+      // Move to the side with more escape room
+      const blockCenter = nearestThreat.x + nearestThreat.w / 2;
+      const spaceLeft = blockCenter;
+      const spaceRight = 640 - blockCenter;
+      if (spaceLeft > spaceRight) {
+        this.playerX -= speed;
+      } else {
+        this.playerX += speed;
+      }
+    } else {
+      // Drift toward the side with fewer threats
+      if (threatLeft > threatRight && timer > 0.2) {
+        this.playerX += speed * 0.5;
+      } else if (threatRight > threatLeft && timer > 0.2) {
+        this.playerX -= speed * 0.5;
+      }
+    }
+
+    this.playerX = Math.max(20, Math.min(620, this.playerX));
+  }
+
   handleClick(x, y) {
     const cx = 640;
     if (x < cx) {

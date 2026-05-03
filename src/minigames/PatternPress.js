@@ -168,6 +168,25 @@ class PatternPress {
     }
   }
 
+  botPlay(dt, timer) {
+    if (!this.waitingForInput || this.done) return;
+    if (!this.botSequence) this.botSequence = [];
+
+    // Watch the pattern
+    if (this.showing && this.showIndex < this.sequence.length) {
+      if (!this.botSequence.includes(this.showIndex)) {
+        this.botSequence.push(this.showIndex);
+      }
+      return;
+    }
+
+    // Replay pattern with slight delay
+    if (this.waitingForInput && this.currentStep < this.sequence.length) {
+      const key = this.keys[this.sequence[this.currentStep]];
+      this.handleKey(key);
+    }
+  }
+
   handleClick(screenX, screenY) {
     if (!this.waitingForInput || this.done) return;
 

@@ -45,6 +45,58 @@ class MemoryMatch {
     }
   }
 
+  botPlay(dt, timer) {
+    if (this.done || !this.canFlip || this.flipped.length >= 2) return;
+    if (!this.botMemory) this.botMemory = {};
+
+    // Remember flipped cards
+    for (const idx of this.flipped) {
+      if (!(idx in this.botMemory)) this.botMemory[idx] = this.cards[idx];
+    }
+
+    // Find a match from memory
+    for (const [i, sym] of Object.entries(this.botMemory)) {
+      for (const [j, sym2] of Object.entries(this.botMemory)) {
+        if (i !== j && sym === sym2 &&
+            !this.matched.includes(Number(i)) && !this.matched.includes(Number(j)) &&
+            !this.flipped.includes(Number(i)) && !this.flipped.includes(Number(j))) {
+          this.handleClickAtIndex(Number(i));
+          setTimeout(() => this.handleClickAtIndex(Number(j)), 500);
+          return;
+        }
+      }
+    }
+
+    // Random guess
+    if (timer > 0.3 && this.flipped.length < 2) {
+      const unknown = [];
+      for (let i = 0; i < this.cards.length; i++) {
+        if (!this.matched.includes(i) && !this.flipped.includes(i)) unknown.push(i);
+      }
+      if (unknown.length > 0) {
+        this.handleClickAtIndex(unknown[Math.floor(Math.random() * unknown.length)]);
+      }
+    }
+  }
+
+  handleClickAtIndex(idx) {
+    const cardW = 55;
+    const cardH = 65;
+    const gap = 10;
+    const overlayX = Math.floor((1280 - 700) / 2);
+    const overlayY = Math.floor((800 - 460) / 2);
+    const gameX = overlayX + 20;
+    const gameY = overlayY + 95;
+    const totalW = 4 * (cardW + gap) - gap;
+    const startX = gameX + (660 - totalW) / 2;
+    const startY = gameY + 80;
+    const col = idx % 4;
+    const row = Math.floor(idx / 4);
+    const screenX = startX + col * (cardW + gap) + cardW / 2;
+    const screenY = startY + row * (cardH + gap) + cardH / 2;
+    this.handleClick(screenX, screenY);
+  }
+
   handleClick(screenX, screenY) {
     if (!this.canFlip || this.done) return;
 

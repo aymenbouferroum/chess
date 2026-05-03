@@ -84,7 +84,8 @@ const GameScreen = {
       this.turn,
       this.gameStatus,
       this.boardRenderer.animations.length > 0,
-      this.lockedTiles
+      this.lockedTiles,
+      dt
     );
 
     this.renderSidePanel(ctx, cols, 'left', 'white');

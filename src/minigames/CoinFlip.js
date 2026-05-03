@@ -27,6 +27,15 @@ class CoinFlip {
 
   update(dt) {}
 
+  botPlay(dt, timer) {
+    if (this.done || this.flipping || this.round >= this.maxRounds) return;
+    // Bot picks randomly
+    if (timer > 0.5) {
+      const x = Math.random() > 0.5 ? 500 : 800;
+      this.handleClick(x, 300);
+    }
+  }
+
   handleClick(x, y) {
     if (this.done || this.flipping || this.round >= this.maxRounds) return;
 

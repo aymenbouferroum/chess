@@ -53,6 +53,18 @@ class RhythmTap {
     }
   }
 
+  botPlay(dt, timer) {
+    if (this.done) return;
+    const targetX = 300;
+    const window = 50;
+    for (const b of this.beats) {
+      if (!b.hit && Math.abs(b.x - targetX) < window * 0.6) {
+        if (Math.random() < 0.8) this.handleClick(0, 0);
+        return;
+      }
+    }
+  }
+
   handleClick(x, y) {
     if (this.done) return;
     // Check if any beat is in the target zone

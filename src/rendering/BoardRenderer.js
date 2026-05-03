@@ -35,7 +35,7 @@ class BoardRenderer {
     return { row, col };
   }
 
-  render(ctx, board, theme, selected, legalMoves, lastMove, turn, gameStatus, animating, lockedTiles) {
+  render(ctx, board, theme, selected, legalMoves, lastMove, turn, gameStatus, animating, lockedTiles, dt) {
     this.calcLayout();
     const { boardX, boardY, squareSize } = this;
     const cols = theme.colors;

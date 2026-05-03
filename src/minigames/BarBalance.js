@@ -56,6 +56,19 @@ class BarBalance {
     }
   }
 
+  botPlay(dt, timer) {
+    if (this.done) return;
+    // Bot pushes against the tilt
+    if (this.angle > 0.2) {
+      this.clicksLeft++;
+    } else if (this.angle < -0.2) {
+      this.clicksRight++;
+    } else if (Math.abs(this.angle) > 0.05 && Math.random() < 0.3) {
+      if (this.angle > 0) this.clicksLeft++;
+      else this.clicksRight++;
+    }
+  }
+
   handleClick(x, y) {
     if (this.done) return;
     const w = 700;

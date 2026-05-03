@@ -52,6 +52,14 @@ class QuickClick {
     audioManager.playTone(400 + Math.random() * 200, 0.05, 'square', 0.05);
   }
 
+  botPlay(dt, timer) {
+    if (!this.running || this.done) return;
+    // Bot clicks at random intervals, slightly faster than default CPU
+    if (Math.random() < dt * 8) {
+      this.handleClick(0, 0);
+    }
+  }
+
   render(ctx, x, y, w, h) {
     const theme = ThemeManager.getTheme(store.get('theme'));
     const cols = theme.colors;
