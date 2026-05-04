@@ -20,12 +20,12 @@ const HomeScreen = {
     this.colors = theme.colors;
 
     this.buttons = [
-      { text: 'Story Mode', action: 'story', y: 340 },
-      { text: 'Local 1v1', action: '1v1', y: 400 },
-      { text: 'Classic Chess', action: 'classic', y: 460 },
-      { text: 'Settings', action: 'settings', y: 520 },
-      { text: 'How to Play', action: 'help', y: 580 },
-      { text: 'Stats', action: 'stats', y: 640 },
+      { text: 'Story Mode', action: 'story', y: 370 },
+      { text: 'Local 1v1', action: '1v1', y: 430 },
+      { text: 'Classic Chess', action: 'classic', y: 490 },
+      { text: 'Settings', action: 'settings', y: 550 },
+      { text: 'How to Play', action: 'help', y: 610 },
+      { text: 'Stats', action: 'stats', y: 670 },
     ];
     this.selectedButton = 0;
     this.titlePulse = 0;
@@ -84,18 +84,18 @@ const HomeScreen = {
 
     // Subtitle
     ctx.fillStyle = cols.accent;
-    ctx.font = '18px monospace';
+    ctx.font = '20px monospace';
     ctx.fillText('A New Era of Battle', 640, 285);
 
     // Subtitle decoration
     ctx.fillStyle = cols.text + '44';
-    ctx.font = '12px monospace';
-    ctx.fillText('~ Pixel Battle Chess ~', 640, 310);
+    ctx.font = '14px monospace';
+    ctx.fillText('~ Pixel Battle Chess ~', 640, 315);
 
     // Theme display
     ctx.fillStyle = cols.text + '88';
-    ctx.font = '11px monospace';
-    ctx.fillText('Theme: ' + theme.name, 640, 340);
+    ctx.font = '13px monospace';
+    ctx.fillText('Theme: ' + theme.name, 640, 345);
 
     // Buttons
     for (let i = 0; i < this.buttons.length; i++) {
