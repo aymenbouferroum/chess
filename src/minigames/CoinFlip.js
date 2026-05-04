@@ -68,22 +68,23 @@ class CoinFlip {
     if (this.flipping) return;
 
     this.flipping = true;
+    this.pendingResult = null;
     audioManager.playTone(400, 0.05, 'square', 0.05);
 
     setTimeout(() => {
-      this.flipResult = Math.random() > 0.5 ? 'heads' : 'tails';
-      this.round++;
-
-      if (this.playerChoice === this.flipResult) {
-        this.playerScore++;
-        audioManager.playTone(600, 0.1, 'square', 0.08);
-      } else {
-        this.cpuScore++;
-        audioManager.playTone(300, 0.1, 'sawtooth', 0.06);
-      }
+      this.pendingResult = Math.random() > 0.5 ? 'heads' : 'tails';
 
       setTimeout(() => {
         this.flipping = false;
+        this.flipResult = this.pendingResult;
+        this.round++;
+        if (this.playerChoice === this.flipResult) {
+          this.playerScore++;
+          audioManager.playTone(600, 0.1, 'square', 0.08);
+        } else {
+          this.cpuScore++;
+          audioManager.playTone(300, 0.1, 'sawtooth', 0.06);
+        }
         if (this.round >= this.maxRounds) {
           this.done = true;
           this.winner = this.playerScore >= this.cpuScore ? 'attacker' : 'defender';

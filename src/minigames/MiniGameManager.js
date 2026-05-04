@@ -19,7 +19,6 @@ class MiniGameManager {
       { type: ReactionTest, weight: 1 },
       { type: UndertaleDodge, weight: 1 },
       { type: PowerMeter, weight: 1 },
-      { type: BarBalance, weight: 1 },
       { type: TargetPractice, weight: 1 },
       { type: DodgeFalling, weight: 1 },
       { type: RhythmTap, weight: 1 },
@@ -161,6 +160,9 @@ class MiniGameManager {
     const ow = this.overlayW;
     const oh = this.overlayH;
 
+    const scaleX = ctx.canvas.width / 1280;
+    const scaleY = ctx.canvas.height / 800;
+    ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
     ctx.clearRect(0, 0, 1280, 800);
 
     // Fade-out when done
@@ -260,7 +262,12 @@ class MiniGameManager {
     audioManager.startMusic();
 
     if (this.callback) {
-      this.callback(this.currentGame ? this.currentGame.winner : 'attacker');
+      const winner = this.currentGame ? this.currentGame.winner : 'attacker';
+      const stats = store.get('stats');
+      stats.miniGamesPlayed++;
+      if (winner === 'attacker') stats.miniGamesWon++;
+      store.set('stats', stats);
+      this.callback(winner);
       this.callback = null;
     }
 

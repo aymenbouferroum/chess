@@ -24,7 +24,7 @@ const CharacterSelect = {
       backgroundRenderer.render(ctx, dt);
     } else {
       ctx.fillStyle = cols.background;
-      
+      ctx.fillRect(0, 0, 1280, 800);
     }
     
 

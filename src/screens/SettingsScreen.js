@@ -33,6 +33,33 @@ const SettingsScreen = {
         toggle: () => {
           this.settings.audioEnabled = !this.settings.audioEnabled;
           store.set('settings', this.settings);
+          audioManager.setEnabled(this.settings.audioEnabled);
+          store.saveProgress();
+        },
+      },
+      {
+        label: 'Music Volume',
+        value: () => Math.round((this.settings.musicVolume || 0.5) * 100) + '%',
+        toggle: () => {
+          const levels = [0, 0.25, 0.5, 0.75, 1];
+          const current = this.settings.musicVolume || 0.5;
+          const idx = levels.indexOf(current);
+          this.settings.musicVolume = levels[(idx + 1) % levels.length];
+          store.set('settings', this.settings);
+          audioManager.setMusicVolume(this.settings.musicVolume);
+          store.saveProgress();
+        },
+      },
+      {
+        label: 'SFX Volume',
+        value: () => Math.round((this.settings.sfxVolume || 0.5) * 100) + '%',
+        toggle: () => {
+          const levels = [0, 0.25, 0.5, 0.75, 1];
+          const current = this.settings.sfxVolume || 0.5;
+          const idx = levels.indexOf(current);
+          this.settings.sfxVolume = levels[(idx + 1) % levels.length];
+          store.set('settings', this.settings);
+          audioManager.setMasterVolume(this.settings.sfxVolume);
           store.saveProgress();
         },
       },
@@ -77,7 +104,7 @@ const SettingsScreen = {
       backgroundRenderer.render(ctx, dt);
     } else {
       ctx.fillStyle = cols.background;
-      
+      ctx.fillRect(0, 0, 1280, 800);
     }
     
 

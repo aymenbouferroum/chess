@@ -24,7 +24,10 @@ class AudioManager {
 
       this.initialized = true;
     } catch (e) {}
-    this.enabled = store.get('settings').audioEnabled;
+    const settings = store.get('settings') || {};
+    this.enabled = settings.audioEnabled !== false;
+    this.setMusicVolume(settings.musicVolume || 0.5);
+    this.setMasterVolume(settings.sfxVolume || 0.5);
   }
 
   _playNote(freq, duration, type, volume, when) {
@@ -385,6 +388,16 @@ class AudioManager {
     } else if (val) {
       this.startMusic();
     }
+  }
+
+  setMusicVolume(vol) {
+    const v = Math.max(0, Math.min(1, vol));
+    if (this.musicGain) this.musicGain.gain.value = v * 0.3;
+  }
+
+  setMasterVolume(vol) {
+    const v = Math.max(0, Math.min(1, vol));
+    if (this.masterGain) this.masterGain.gain.value = v * 0.6;
   }
 }
 

@@ -12,7 +12,6 @@ const MiniGamePractice = {
       { name: 'Reaction Test', type: ReactionTest },
       { name: 'Soul Dodge', type: UndertaleDodge },
       { name: 'Power Meter', type: PowerMeter },
-      { name: 'Bar Balance', type: BarBalance },
       { name: 'Target Practice', type: TargetPractice },
       { name: 'Dodge Falling', type: DodgeFalling },
       { name: 'Rhythm Tap', type: RhythmTap },

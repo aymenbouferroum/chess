@@ -7,6 +7,7 @@ miniCtx.imageSmoothingEnabled = false;
 
 let currentScreen = null;
 let lastTime = 0;
+let transition = { active: false, alpha: 0, fadeOut: true, nextScreen: null, nextData: null, speed: 4 };
 
 const screens = {};
 
@@ -15,25 +16,71 @@ function registerScreen(name, screenImpl) {
 }
 
 function switchScreen(name, data) {
+  if (transition.active) return;
+  transition.active = true;
+  transition.fadeOut = true;
+  transition.alpha = 0;
+  transition.nextScreen = name;
+  transition.nextData = data;
+}
+
+function _doSwitchScreen() {
   if (currentScreen && currentScreen.destroy) {
     currentScreen.destroy();
   }
   miniCanvas.classList.remove('active');
-  store.set('screen', name);
-  currentScreen = screens[name];
+  store.set('screen', transition.nextScreen);
+  currentScreen = screens[transition.nextScreen];
   if (currentScreen && currentScreen.init) {
-    currentScreen.init(data);
+    currentScreen.init(transition.nextData);
   }
+}
+
+function resizeCanvas() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.width = w;
+  canvas.height = h;
+  miniCanvas.width = w;
+  miniCanvas.height = h;
 }
 
 function gameLoop(timestamp) {
   const dt = lastTime ? (timestamp - lastTime) / 1000 : 0.016;
   lastTime = timestamp;
 
+  const scaleX = canvas.width / 1280;
+  const scaleY = canvas.height / 800;
+  ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
   ctx.clearRect(0, 0, 1280, 800);
 
   if (currentScreen && currentScreen.render) {
     currentScreen.render(ctx, dt);
+  }
+
+  // Render pause menu on top of game screen
+  if (PauseMenu.visible) {
+    PauseMenu.render(ctx);
+  }
+
+  // Screen transition fade
+  if (transition.active) {
+    if (transition.fadeOut) {
+      transition.alpha += dt * transition.speed;
+      if (transition.alpha >= 1) {
+        transition.alpha = 1;
+        transition.fadeOut = false;
+        _doSwitchScreen();
+      }
+    } else {
+      transition.alpha -= dt * transition.speed;
+      if (transition.alpha <= 0) {
+        transition.alpha = 0;
+        transition.active = false;
+      }
+    }
+    ctx.fillStyle = `rgba(0,0,0,${transition.alpha})`;
+    ctx.fillRect(0, 0, 1280, 800);
   }
 
   requestAnimationFrame(gameLoop);
@@ -50,6 +97,8 @@ function initApp() {
   registerScreen('game', GameScreen);
   registerScreen('settings', SettingsScreen);
   registerScreen('miniGamePractice', MiniGamePractice);
+  registerScreen('howToPlay', HowToPlay);
+  registerScreen('stats', StatsScreen);
 
   function getMousePos(e, el) {
     const rect = el.getBoundingClientRect();
@@ -62,10 +111,15 @@ function initApp() {
   }
 
   canvas.addEventListener('click', (e) => {
+    if (transition.active) return;
     const { x, y } = getMousePos(e, canvas);
 
     if (store.get('miniGameActive')) {
       miniGameManager.handleClick(x, y);
+      return;
+    }
+    if (PauseMenu.visible) {
+      PauseMenu.handleClick(x, y);
       return;
     }
     if (currentScreen && currentScreen.handleClick) {
@@ -109,6 +163,9 @@ function initApp() {
       currentScreen.handleKeyDown(e);
     }
   });
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
 
   switchScreen('home');
 

@@ -211,11 +211,15 @@ const GameScreen = {
     ctx.font = '12px monospace';
     ctx.textAlign = 'center';
     const turnText = this.turn === 'white' ? "White's Turn" : "Black's Turn";
-    ctx.fillText(turnText, 640, y + 22);
     if (this.gameStatus === 'check') {
       ctx.fillStyle = '#ff4444';
       ctx.font = 'bold 14px monospace';
-      ctx.fillText('CHECK!', 640, y + 22);
+      ctx.fillText('CHECK!', 640, y + 18);
+      ctx.fillStyle = cols.text + '88';
+      ctx.font = '10px monospace';
+      ctx.fillText(turnText, 640, y + 32);
+    } else {
+      ctx.fillText(turnText, 640, y + 22);
     }
     ctx.fillStyle = cols.text + '66';
     ctx.font = '10px monospace';
@@ -293,10 +297,11 @@ const GameScreen = {
 
   handleKeyDown(e) {
     if (e.key === 'Escape') {
-      if (!this.gameOver) {
-        audioManager.stopMusic();
+      if (this.gameOver) {
+        switchScreen('home');
+      } else {
+        PauseMenu.show();
       }
-      switchScreen('home');
     }
   },
 
@@ -338,6 +343,9 @@ const GameScreen = {
   executeCaptureMove(move, piece, captured) {
     if (captured) {
       this.capturedPieces[this.turn].push(captured);
+      const stats = store.get('stats');
+      stats.captures++;
+      store.set('stats', stats);
 
       const theme = ThemeManager.getTheme(store.get('theme'));
       const toScreen = this.boardRenderer.boardToScreen(move.to.row, move.to.col);
@@ -450,7 +458,7 @@ const GameScreen = {
       const isCapture = !!captured;
 
       if (isCapture && MiniGameManager.shouldTriggerMiniGame()) {
-        this.aiThinking = false;
+        this.aiCooldown = 600;
         miniGameManager.startMiniGame(
           piece, captured, move.to,
           true, // AI is attacking
@@ -464,7 +472,6 @@ const GameScreen = {
               this.selectedSquare = null;
               this.legalMoves = [];
             }
-            // Always reset aiThinking after any minigame so turn flow works
             this.aiThinking = false;
             this.aiCooldown = 600;
           }
@@ -478,6 +485,13 @@ const GameScreen = {
   },
 
   handleGameEnd() {
+    const stats = store.get('stats');
+    stats.gamesPlayed++;
+    if (this.gameResult === 'white') stats.wins++;
+    else if (this.gameResult === 'black') stats.losses++;
+    else stats.draws++;
+    store.set('stats', stats);
+
     if (this.mode === 'story' && this.gameResult === 'white') {
       const currentLevel = this.characterLevel || store.get('storyLevel');
       const maxUnlocked = store.get('maxUnlockedLevel');
@@ -487,8 +501,8 @@ const GameScreen = {
       } else if (currentLevel >= maxUnlocked) {
         store.set('storyLevel', currentLevel);
       }
-      store.saveProgress();
     }
+    store.saveProgress();
   },
 
   wrapText(ctx, text, x, y, maxWidth, lineHeight) {

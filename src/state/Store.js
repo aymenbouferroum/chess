@@ -35,6 +35,15 @@ class Store {
       gameResult: null,
       animating: false,
       promotionPending: null,
+      stats: {
+        gamesPlayed: 0,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        captures: 0,
+        miniGamesPlayed: 0,
+        miniGamesWon: 0,
+      },
     };
     this.listeners = {};
     this.loadProgress();
@@ -81,6 +90,7 @@ class Store {
         settings: this.state.settings,
         controls: this.state.controls,
         theme: this.state.theme,
+        stats: this.state.stats,
       }));
     } catch (e) {}
   }
@@ -95,6 +105,7 @@ class Store {
         this.state.settings = { ...this.state.settings, ...data.settings };
         this.state.controls = data.controls || this.state.controls;
         this.state.theme = data.theme || 'space';
+        this.state.stats = { ...this.state.stats, ...data.stats };
       }
     } catch (e) {}
   }

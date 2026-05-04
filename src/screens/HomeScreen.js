@@ -20,11 +20,12 @@ const HomeScreen = {
     this.colors = theme.colors;
 
     this.buttons = [
-      { text: 'Story Mode', action: 'story', y: 360 },
-      { text: 'Local 1v1', action: '1v1', y: 430 },
-      { text: 'Classic Chess', action: 'classic', y: 500 },
-      { text: 'Settings', action: 'settings', y: 570 },
-      { text: 'Theme: ' + theme.name, action: 'themes', y: 640 },
+      { text: 'Story Mode', action: 'story', y: 340 },
+      { text: 'Local 1v1', action: '1v1', y: 400 },
+      { text: 'Classic Chess', action: 'classic', y: 460 },
+      { text: 'Settings', action: 'settings', y: 520 },
+      { text: 'How to Play', action: 'help', y: 580 },
+      { text: 'Stats', action: 'stats', y: 640 },
     ];
     this.selectedButton = 0;
     this.titlePulse = 0;
@@ -43,7 +44,7 @@ const HomeScreen = {
       backgroundRenderer.render(ctx, dt);
     } else {
       ctx.fillStyle = cols.background;
-      
+      ctx.fillRect(0, 0, 1280, 800);
     }
     
 
@@ -200,6 +201,12 @@ const HomeScreen = {
         break;
       case 'themes':
         switchScreen('themeSelect', { returnTo: 'home' });
+        break;
+      case 'help':
+        switchScreen('howToPlay');
+        break;
+      case 'stats':
+        switchScreen('stats');
         break;
     }
   },

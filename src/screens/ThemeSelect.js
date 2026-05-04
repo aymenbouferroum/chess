@@ -20,7 +20,7 @@ const ThemeSelect = {
       backgroundRenderer.render(ctx, dt);
     } else {
       ctx.fillStyle = cols.background;
-      
+      ctx.fillRect(0, 0, 1280, 800);
     }
     
 
@@ -32,13 +32,14 @@ const ThemeSelect = {
     ctx.fillStyle = cols.text + '88';
     ctx.fillText('Choose your visual style', 640, 85);
 
-    const startX = 60;
-    const startY = 120;
     const cardW = 220;
     const cardH = 130;
     const gapX = 30;
     const gapY = 25;
-    const perRow = 5;
+    const perRow = 4;
+    const totalGridW = perRow * cardW + (perRow - 1) * gapX;
+    const startX = (1280 - totalGridW) / 2;
+    const startY = 120;
 
     for (let i = 0; i < this.themes.length; i++) {
       const t = this.themes[i];
@@ -81,6 +82,7 @@ const ThemeSelect = {
       if (isActive) {
         ctx.fillStyle = t.colors.accent;
         ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'left';
         ctx.fillText('ACTIVE', x + 10, y + 95);
       }
 
@@ -95,6 +97,52 @@ const ThemeSelect = {
         ctx.fillRect(x + cardW - 55, y + 97, 8, 8);
         ctx.fillStyle = t.colors.darkSquare;
         ctx.fillRect(x + cardW - 40, y + 97, 8, 8);
+      }
+    }
+
+    // Custom color editor
+    const customIdx = this.themes.findIndex(t => t.id === 'custom');
+    const isCustomActive = customIdx !== -1 && (this.hoveredIndex === customIdx || store.get('theme') === 'custom');
+    if (isCustomActive) {
+      const editorY = 520;
+      const editorH = 180;
+      ctx.fillStyle = cols.panel + 'dd';
+      ctx.fillRect(startX, editorY, totalGridW, editorH);
+      ctx.strokeStyle = cols.accent;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(startX, editorY, totalGridW, editorH);
+
+      ctx.fillStyle = cols.text;
+      ctx.font = 'bold 14px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('CLICK A SWATCH TO CYCLE COLOR', startX + totalGridW / 2, editorY + 22);
+
+      const colorKeys = ['lightSquare', 'darkSquare', 'lightPiece', 'darkPiece', 'highlight', 'background', 'panel', 'text', 'accent', 'buttonBg'];
+      const swatchSize = 24;
+      const swatchGap = 8;
+      const colsPerRow = 5;
+      const swatchTotalW = colsPerRow * (swatchSize + swatchGap) - swatchGap;
+      const swatchStartX = startX + (totalGridW - swatchTotalW) / 2;
+      const swatchStartY = editorY + 40;
+
+      for (let i = 0; i < colorKeys.length; i++) {
+        const row = Math.floor(i / colsPerRow);
+        const col = i % colsPerRow;
+        const sx = swatchStartX + col * (swatchSize + swatchGap);
+        const sy = swatchStartY + row * (swatchSize + swatchGap + 14);
+        const key = colorKeys[i];
+        const color = ThemeManager.getTheme('custom').colors[key];
+
+        ctx.fillStyle = color;
+        ctx.fillRect(sx, sy, swatchSize, swatchSize);
+        ctx.strokeStyle = cols.text + '66';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(sx, sy, swatchSize, swatchSize);
+
+        ctx.fillStyle = cols.text + 'aa';
+        ctx.font = '9px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(key, sx + swatchSize / 2, sy + swatchSize + 10);
       }
     }
 
@@ -117,13 +165,14 @@ const ThemeSelect = {
       return;
     }
 
-    const startX = 60;
-    const startY = 120;
     const cardW = 220;
     const cardH = 130;
     const gapX = 30;
     const gapY = 25;
-    const perRow = 5;
+    const perRow = 4;
+    const totalGridW = perRow * cardW + (perRow - 1) * gapX;
+    const startX = (1280 - totalGridW) / 2;
+    const startY = 120;
 
     for (let i = 0; i < this.themes.length; i++) {
       const row = Math.floor(i / perRow);
@@ -135,17 +184,49 @@ const ThemeSelect = {
         return;
       }
     }
+
+    // Custom color swatch clicks
+    const customIdx = this.themes.findIndex(t => t.id === 'custom');
+    const isCustomActive = customIdx !== -1 && (this.hoveredIndex === customIdx || store.get('theme') === 'custom');
+    if (isCustomActive) {
+      const editorY = 520;
+      const colorKeys = ['lightSquare', 'darkSquare', 'lightPiece', 'darkPiece', 'highlight', 'background', 'panel', 'text', 'accent', 'buttonBg'];
+      const swatchSize = 24;
+      const swatchGap = 8;
+      const colsPerRow = 5;
+      const swatchTotalW = colsPerRow * (swatchSize + swatchGap) - swatchGap;
+      const swatchStartX = startX + (totalGridW - swatchTotalW) / 2;
+      const swatchStartY = editorY + 40;
+      const presets = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#44ffff', '#ffffff', '#000000', '#888888', '#ff8800', '#8800ff', '#0088ff', '#8b4513', '#2e8b57', '#800000'];
+
+      for (let i = 0; i < colorKeys.length; i++) {
+        const row = Math.floor(i / colsPerRow);
+        const col = i % colsPerRow;
+        const sx = swatchStartX + col * (swatchSize + swatchGap);
+        const sy = swatchStartY + row * (swatchSize + swatchGap + 14);
+        if (x >= sx && x <= sx + swatchSize && y >= sy && y <= sy + swatchSize) {
+          const key = colorKeys[i];
+          const current = ThemeManager.getTheme('custom').colors[key];
+          let idx = presets.indexOf(current);
+          if (idx === -1) idx = 0;
+          const nextColor = presets[(idx + 1) % presets.length];
+          ThemeManager.setCustomColor(key, nextColor);
+          return;
+        }
+      }
+    }
   },
 
   handleMouseMove(x, y) {
     this.hoveredIndex = -1;
-    const startX = 60;
-    const startY = 120;
     const cardW = 220;
     const cardH = 130;
     const gapX = 30;
     const gapY = 25;
-    const perRow = 5;
+    const perRow = 4;
+    const totalGridW = perRow * cardW + (perRow - 1) * gapX;
+    const startX = (1280 - totalGridW) / 2;
+    const startY = 120;
 
     for (let i = 0; i < this.themes.length; i++) {
       const row = Math.floor(i / perRow);
