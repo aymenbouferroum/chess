@@ -503,7 +503,7 @@ const GameScreen = {
 
       this.executeCaptureMove(move, piece, captured);
       this.aiThinking = false;
-    }, 500 + Math.random() * 500);
+    }, 150 + Math.random() * 200);
   },
 
   handleGameEnd() {

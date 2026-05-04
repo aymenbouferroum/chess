@@ -1,9 +1,9 @@
 class Search {
   static nodesSearched = 0;
-  static maxNodes = 30000;
+  static maxNodes = 20000;
   static abortSearch = false;
 
-  static search(board, depth, color, alpha, beta, isMaximizing) {
+  static search(board, depth, color, alpha, beta, isMaximizing, precomputedMoves = null) {
     this.nodesSearched++;
     if (this.nodesSearched > this.maxNodes) {
       this.abortSearch = true;
@@ -14,7 +14,7 @@ class Search {
       return { score: Evaluate.evaluate(board, color) };
     }
 
-    const moves = GameRules.getLegalMoves(board, isMaximizing ? color : (color === 'white' ? 'black' : 'white'));
+    const moves = precomputedMoves || GameRules.getLegalMoves(board, isMaximizing ? color : (color === 'white' ? 'black' : 'white'));
 
     if (moves.length === 0) {
       if (board.inCheck) {
@@ -71,6 +71,18 @@ class Search {
     if (moves.length === 0) return null;
     if (moves.length === 1) return moves[0];
 
+    // Sort moves by shallow evaluation for better alpha-beta pruning
+    if (moves.length > 1 && depth > 1) {
+      const scored = moves.map(move => {
+        const score = this.evaluateMove(board, color, move, 1);
+        return { move, score };
+      });
+      scored.sort((a, b) => b.score - a.score);
+      const sortedMoves = scored.map(s => s.move);
+      const result = this.search(board, depth, color, -Infinity, Infinity, true, sortedMoves);
+      return result.move || sortedMoves[0];
+    }
+
     const result = this.search(board, depth, color, -Infinity, Infinity, true);
     return result.move || moves[0];
   }
@@ -121,7 +133,8 @@ class Search {
       return scored[0].move;
     }
 
-    const result = this.search(board, depth, color, -Infinity, Infinity, true);
-    return result.move || scored[0].move;
+    const sortedMoves = scored.map(s => s.move);
+    const result = this.search(board, depth, color, -Infinity, Infinity, true, sortedMoves);
+    return result.move || sortedMoves[0];
   }
 }
