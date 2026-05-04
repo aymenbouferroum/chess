@@ -49,54 +49,72 @@ const ThemeSelect = {
       const y = startY + row * (cardH + gapY);
       const isHover = i === this.hoveredIndex;
       const isActive = t.id === store.get('theme');
+      const unlocked = ThemeManager.isThemeUnlocked(t.id);
 
       // Card background
-      ctx.fillStyle = isHover ? t.colors.buttonHover : t.colors.panel;
+      ctx.fillStyle = isHover && unlocked ? t.colors.buttonHover : t.colors.panel;
       ctx.fillRect(x, y, cardW, cardH);
 
       // Card border
-      ctx.strokeStyle = isActive ? t.colors.accent : (isHover ? t.colors.text + '88' : t.colors.text + '22');
+      ctx.strokeStyle = isActive ? t.colors.accent : (isHover && unlocked ? t.colors.text + '88' : t.colors.text + '22');
       ctx.lineWidth = isActive ? 3 : 1;
       ctx.strokeRect(x, y, cardW, cardH);
 
-      // Color preview swatches
-      const swatchSize = 16;
-      const swatches = [t.colors.lightSquare, t.colors.darkSquare, t.colors.lightPiece, t.colors.darkPiece, t.colors.accent];
-      for (let s = 0; s < swatches.length; s++) {
-        ctx.fillStyle = swatches[s];
-        ctx.fillRect(x + 10 + s * (swatchSize + 4), y + 15, swatchSize, swatchSize);
-      }
+      if (unlocked) {
+        // Color preview swatches
+        const swatchSize = 16;
+        const swatches = [t.colors.lightSquare, t.colors.darkSquare, t.colors.lightPiece, t.colors.darkPiece, t.colors.accent];
+        for (let s = 0; s < swatches.length; s++) {
+          ctx.fillStyle = swatches[s];
+          ctx.fillRect(x + 10 + s * (swatchSize + 4), y + 15, swatchSize, swatchSize);
+        }
 
-      // Theme name
-      ctx.fillStyle = t.colors.text;
-      ctx.font = '14px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(t.name, x + 10, y + 52);
-
-      // Description
-      ctx.fillStyle = t.colors.text + '77';
-      ctx.font = '10px monospace';
-      ctx.fillText(t.desc, x + 10, y + 70);
-
-      // Active indicator
-      if (isActive) {
-        ctx.fillStyle = t.colors.accent;
-        ctx.font = 'bold 10px monospace';
+        // Theme name
+        ctx.fillStyle = t.colors.text;
+        ctx.font = '14px monospace';
         ctx.textAlign = 'left';
-        ctx.fillText('ACTIVE', x + 10, y + 95);
-      }
+        ctx.fillText(t.name, x + 10, y + 52);
 
-      // Hover background preview
-      if (isHover) {
-        ctx.fillStyle = t.colors.background + '33';
-        ctx.fillRect(x + cardW - 60, y + 80, 50, 40);
-        ctx.fillStyle = t.colors.highlight;
-        ctx.fillRect(x + cardW - 55, y + 85, 8, 8);
-        ctx.fillRect(x + cardW - 40, y + 85, 8, 8);
-        ctx.fillStyle = t.colors.lightSquare;
-        ctx.fillRect(x + cardW - 55, y + 97, 8, 8);
-        ctx.fillStyle = t.colors.darkSquare;
-        ctx.fillRect(x + cardW - 40, y + 97, 8, 8);
+        // Description
+        ctx.fillStyle = t.colors.text + '77';
+        ctx.font = '10px monospace';
+        ctx.fillText(t.desc, x + 10, y + 70);
+
+        // Active indicator
+        if (isActive) {
+          ctx.fillStyle = t.colors.accent;
+          ctx.font = 'bold 10px monospace';
+          ctx.textAlign = 'left';
+          ctx.fillText('ACTIVE', x + 10, y + 95);
+        }
+
+        // Hover background preview
+        if (isHover) {
+          ctx.fillStyle = t.colors.background + '33';
+          ctx.fillRect(x + cardW - 60, y + 80, 50, 40);
+          ctx.fillStyle = t.colors.highlight;
+          ctx.fillRect(x + cardW - 55, y + 85, 8, 8);
+          ctx.fillRect(x + cardW - 40, y + 85, 8, 8);
+          ctx.fillStyle = t.colors.lightSquare;
+          ctx.fillRect(x + cardW - 55, y + 97, 8, 8);
+          ctx.fillStyle = t.colors.darkSquare;
+          ctx.fillRect(x + cardW - 40, y + 97, 8, 8);
+        }
+      } else {
+        // Locked overlay
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(x, y, cardW, cardH);
+        ctx.fillStyle = '#ff4444';
+        ctx.font = 'bold 20px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚠', x + cardW / 2, y + cardH / 2 + 6);
+        ctx.fillStyle = cols.text + '88';
+        ctx.font = '10px monospace';
+        ctx.fillText('LOCKED', x + cardW / 2, y + cardH / 2 + 24);
+        ctx.fillStyle = cols.text + '55';
+        ctx.font = '9px monospace';
+        const reqs = { egypt: 'Lv 2', cyberpunk: 'Lv 4', japanese: 'Lv 5', artdeco: 'Lv 6', wildwest: 'Lv 7', prehistoric: 'Lv 8', steampunk: 'Lv 9' };
+        if (reqs[t.id]) ctx.fillText('Story ' + reqs[t.id], x + cardW / 2, y + cardH / 2 + 38);
       }
     }
 
@@ -180,7 +198,9 @@ const ThemeSelect = {
       const cx = startX + col * (cardW + gapX);
       const cy = startY + row * (cardH + gapY);
       if (x >= cx && x <= cx + cardW && y >= cy && y <= cy + cardH) {
-        ThemeManager.applyTheme(this.themes[i].id);
+        if (ThemeManager.isThemeUnlocked(this.themes[i].id)) {
+          ThemeManager.applyTheme(this.themes[i].id);
+        }
         return;
       }
     }

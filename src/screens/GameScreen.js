@@ -20,6 +20,8 @@ const GameScreen = {
   lastMove: null,
   lockedTiles: [],
   pendingRevertMove: null,
+  captureCombo: 0,
+  comboDisplayTimer: 0,
 
   init(data) {
     this.board = new Board();
@@ -39,6 +41,8 @@ const GameScreen = {
     this.lastMove = null;
     this.lockedTiles = [];
     this.pendingRevertMove = null;
+    this.captureCombo = 0;
+    this.comboDisplayTimer = 0;
 
     this.mode = store.get('mode');
     if (this.mode === 'story') {
@@ -150,6 +154,19 @@ const GameScreen = {
       ctx.textAlign = 'center';
       const dots = '.'.repeat(Math.floor(Date.now() / 500) % 4);
       ctx.fillText('Opponent is thinking' + dots, 640, 30);
+    }
+
+    // Combo display
+    if (this.comboDisplayTimer > 0) {
+      this.comboDisplayTimer -= dt;
+      if (this.captureCombo > 1) {
+        const alpha = Math.min(1, this.comboDisplayTimer);
+        const bounce = Math.sin(this.comboDisplayTimer * 10) * 5;
+        ctx.fillStyle = `rgba(255,200,50,${alpha})`;
+        ctx.font = 'bold 24px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.captureCombo + 'x COMBO!', 640, 80 + bounce);
+      }
     }
   },
 
@@ -337,12 +354,17 @@ const GameScreen = {
     }
 
     // Normal move (no mini-game or no capture)
+    this.lastMoveWasCapture = !!captured;
+    if (!captured) this.captureCombo = 0;
     this.executeCaptureMove(move, piece, captured);
   },
 
   executeCaptureMove(move, piece, captured) {
     if (captured) {
       this.capturedPieces[this.turn].push(captured);
+      this.captureCombo++;
+      this.comboDisplayTimer = 2;
+      this.lastMoveWasCapture = true;
       const stats = store.get('stats');
       stats.captures++;
       store.set('stats', stats);
