@@ -106,20 +106,43 @@ const HomeScreen = {
       ctx.stroke();
     }
 
-    // Title shadow
-    ctx.fillStyle = cols.accent + '44';
-    ctx.font = 'bold 72px monospace';
+    // Title - "CHESS" in monospace, "2.0" in sans-serif to avoid wide dot
     ctx.textAlign = 'center';
-    ctx.fillText('CHESS 2.0', 642, 222);
+    ctx.font = 'bold 72px monospace';
+    const chessW = ctx.measureText('CHESS').width;
+    ctx.font = 'bold 72px sans-serif';
+    const verW = ctx.measureText('2.0').width;
+    const gap = 18;
+    const totalW = chessW + gap + verW;
+    const titleX = 640 - totalW / 2;
 
-    // Title
+    // Outline pass
+    ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+    ctx.lineWidth = 6;
+    ctx.lineJoin = 'round';
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 72px monospace';
+    ctx.strokeText('CHESS', titleX, 220);
+    ctx.font = 'bold 72px sans-serif';
+    ctx.strokeText('2.0', titleX + chessW + gap, 220);
+
+    // Glow + fill pass
+    ctx.shadowColor = cols.accent;
+    ctx.shadowBlur = 20;
     ctx.fillStyle = cols.text;
     ctx.font = 'bold 72px monospace';
-    ctx.fillText('CHESS 2.0', 640, 220);
+    ctx.fillText('CHESS', titleX, 220);
+    ctx.font = 'bold 72px sans-serif';
+    ctx.fillText('2.0', titleX + chessW + gap, 220);
+    ctx.shadowBlur = 0;
+    ctx.textAlign = 'center';
 
-    // Subtitle
+    // Subtitle outline
+    ctx.font = 'bold 20px monospace';
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    ctx.lineWidth = 4;
+    ctx.strokeText('A New Era of Battle', 640, 268);
     ctx.fillStyle = cols.accent;
-    ctx.font = '20px monospace';
     ctx.fillText('A New Era of Battle', 640, 268);
 
     // Theme pill
