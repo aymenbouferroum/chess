@@ -116,13 +116,13 @@ const CharacterSelect = {
       // Dialogue preview on hover
       if (isHover && !this.showDialogue) {
         ctx.fillStyle = cols.text + 'bb';
-        ctx.font = '10px monospace';
+        ctx.font = '9px monospace';
         ctx.textAlign = 'center';
         const words = ch.dialogue.before;
-        ctx.fillText('"', x + cardW / 2, y + 185);
+        ctx.fillText('"', x + cardW / 2, y + 178);
         // Word wrap dialogue
         ctx.textAlign = 'left';
-        this.wrapText(ctx, words, x + 10, y + 200, cardW - 20, 14);
+        this.wrapText(ctx, words, x + 10, y + 188, cardW - 20, 12, 5);
       }
 
       // Level progress bar for current level
@@ -213,17 +213,23 @@ const CharacterSelect = {
     }
   },
 
-  wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
     const words = text.split(' ');
     let line = '';
     let ly = y;
+    let lines = 0;
     for (const word of words) {
       const test = line + word + ' ';
       const m = ctx.measureText(test);
       if (m.width > maxWidth && line !== '') {
+        if (maxLines && lines >= maxLines - 1) {
+          ctx.fillText(line.trim() + '...', x, ly);
+          return;
+        }
         ctx.fillText(line, x, ly);
         line = word + ' ';
         ly += lineHeight;
+        lines++;
       } else {
         line = test;
       }

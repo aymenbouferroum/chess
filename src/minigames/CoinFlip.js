@@ -35,6 +35,18 @@ class CoinFlip {
     }
   }
 
+  handleKey(key) {
+    if (this.done || this.flipping || this.round >= this.maxRounds) return;
+    if (key === 'ArrowLeft' || key === 'a' || key === 'h' || key === 'H') {
+      this.playerChoice = 'heads';
+    } else if (key === 'ArrowRight' || key === 'd' || key === 't' || key === 'T' || key === ' ' || key === 'Enter') {
+      this.playerChoice = 'tails';
+    } else {
+      return;
+    }
+    this._doFlip();
+  }
+
   handleClick(x, y) {
     if (this.done || this.flipping || this.round >= this.maxRounds) return;
 
@@ -49,6 +61,11 @@ class CoinFlip {
     } else {
       this.playerChoice = 'tails';
     }
+    this._doFlip();
+  }
+
+  _doFlip() {
+    if (this.flipping) return;
 
     this.flipping = true;
     audioManager.playTone(400, 0.05, 'square', 0.05);

@@ -78,6 +78,15 @@ class TargetPractice {
     }
   }
 
+  handleKey(key) {
+    if (key === ' ' || key === 'Enter') {
+      // Shoot at the center of the game area
+      const gx = (1280 - 700) / 2;
+      const gy = (800 - 460) / 2;
+      this.handleClick(gx + 350, gy + 230);
+    }
+  }
+
   handleClick(x, y) {
     if (this.done) return;
     const w = 700;

@@ -56,6 +56,10 @@ class ReactionTest {
     }
   }
 
+  handleKey(key) {
+    if (key === ' ' || key === 'Enter') this.handleClick(0, 0);
+  }
+
   handleClick(x, y) {
     if (this.done) return;
 

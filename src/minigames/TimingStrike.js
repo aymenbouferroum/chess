@@ -43,6 +43,10 @@ class TimingStrike {
     }
   }
 
+  handleKey(key) {
+    if (key === ' ' || key === 'Enter') this.handleClick(0, 0);
+  }
+
   handleClick(x, y) {
     if (this.done) return;
     if (this.waitingForStrike) {
@@ -72,13 +76,10 @@ class TimingStrike {
         if (this.winner === 'attacker') audioManager.playMiniGameWin();
         else audioManager.playMiniGameLose();
       } else {
-        this.waitingForStrike = false;
-        setTimeout(() => {
-          this.pos = Math.random() * 100;
-          this.direction = Math.random() > 0.5 ? 1 : -1;
-          this.speed = 2.5 + this.strikes * 0.5;
-          this.waitingForStrike = true;
-        }, 500);
+        // Immediate reset for next strike - no delay
+        this.pos = Math.random() * 100;
+        this.direction = Math.random() > 0.5 ? 1 : -1;
+        this.speed = 2.5 + this.strikes * 0.5;
       }
     }
   }

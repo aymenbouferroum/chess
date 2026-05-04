@@ -79,6 +79,14 @@ class MemoryMatch {
     }
   }
 
+  handleKey(key) {
+    if (!this.canFlip || this.done) return;
+    const idx = parseInt(key, 10) - 1;
+    if (idx >= 0 && idx < this.cards.length) {
+      this.handleClickAtIndex(idx);
+    }
+  }
+
   handleClickAtIndex(idx) {
     const cardW = 55;
     const cardH = 65;

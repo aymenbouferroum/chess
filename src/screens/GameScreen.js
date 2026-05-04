@@ -35,6 +35,7 @@ const GameScreen = {
     this.capturedPieces = { white: [], black: [] };
     this.moveHistory = [];
     this.aiThinking = false;
+    this.aiCooldown = 0;
     this.lastMove = null;
     this.lockedTiles = [];
     this.pendingRevertMove = null;
@@ -72,7 +73,11 @@ const GameScreen = {
     const theme = ThemeManager.getTheme(store.get('theme'));
     const cols = theme.colors;
 
-    if (this.mode === 'story' && this.turn === 'black' && !this.aiThinking && !this.gameOver) {
+    if (this.aiCooldown > 0) {
+      this.aiCooldown -= dt * 1000;
+      if (this.aiCooldown < 0) this.aiCooldown = 0;
+    }
+    if (this.mode === 'story' && this.turn === 'black' && !this.aiThinking && !this.gameOver && this.aiCooldown <= 0) {
       this.doAIMove();
     }
 
@@ -458,9 +463,10 @@ const GameScreen = {
               audioManager.playTileLock();
               this.selectedSquare = null;
               this.legalMoves = [];
-              // AI must try a different move
-              this.aiThinking = false;
             }
+            // Always reset aiThinking after any minigame so turn flow works
+            this.aiThinking = false;
+            this.aiCooldown = 600;
           }
         );
         return;

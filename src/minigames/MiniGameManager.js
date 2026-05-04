@@ -78,6 +78,7 @@ class MiniGameManager {
     this.attackerPiece = attacker;
     this.defenderPiece = defender;
     this.botTimer = 0;
+    this.nextBotAction = 0.3 + Math.random() * 0.3;
 
     const totalWeight = this.allGames.reduce((s, g) => s + g.weight, 0);
     let r = Math.random() * totalWeight;
@@ -116,6 +117,7 @@ class MiniGameManager {
     this.attackerPiece = { type: 'pawn', color: 'white' };
     this.defenderPiece = { type: 'pawn', color: 'black' };
     this.botTimer = 0;
+    this.nextBotAction = 0;
 
     this.currentGame = new gameType();
     this.currentGame.init(this.attackerPiece, this.defenderPiece, difficulty, false);
@@ -144,8 +146,12 @@ class MiniGameManager {
     // Bot AI plays the minigame when AI is attacking
     if (this.isAIAttacking && !this.currentGame.done) {
       this.botTimer += dt;
-      if (this.currentGame.botPlay) {
-        this.currentGame.botPlay(dt, this.botTimer);
+      // Human-like reaction delay: bot only acts every 0.15-0.4s
+      if (!this.nextBotAction || this.botTimer >= this.nextBotAction) {
+        this.nextBotAction = this.botTimer + 0.15 + Math.random() * 0.25;
+        if (this.currentGame.botPlay) {
+          this.currentGame.botPlay(dt, this.botTimer);
+        }
       }
     }
 

@@ -22,6 +22,26 @@ class NumberGuess {
 
   update(dt) {}
 
+  handleKey(key) {
+    if (this.done) return;
+    if (key >= '0' && key <= '9') {
+      if (!this.keyBuffer) this.keyBuffer = '';
+      this.keyBuffer += key;
+      const num = parseInt(this.keyBuffer, 10);
+      if (num > this.maxNum) this.keyBuffer = '' + key;
+    } else if (key === 'Backspace') {
+      if (this.keyBuffer) this.keyBuffer = this.keyBuffer.slice(0, -1);
+    } else if (key === 'Enter') {
+      if (this.keyBuffer) {
+        const num = parseInt(this.keyBuffer, 10);
+        if (num > 0 && num <= this.maxNum && !this.guesses.some(g => g.num === num)) {
+          this.makeGuess(num);
+        }
+        this.keyBuffer = '';
+      }
+    }
+  }
+
   handleClick(screenX, screenY) {
     if (this.done) return;
 

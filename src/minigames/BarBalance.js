@@ -69,6 +69,17 @@ class BarBalance {
     }
   }
 
+  handleKey(key) {
+    if (this.done) return;
+    if (key === 'ArrowLeft' || key === 'a') {
+      this.clicksLeft++;
+      audioManager.playTone(400, 0.05, 'square', 0.04);
+    } else if (key === 'ArrowRight' || key === 'd') {
+      this.clicksRight++;
+      audioManager.playTone(400, 0.05, 'square', 0.04);
+    }
+  }
+
   handleClick(x, y) {
     if (this.done) return;
     const w = 700;

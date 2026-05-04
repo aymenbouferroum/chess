@@ -46,6 +46,10 @@ class QuickClick {
     }
   }
 
+  handleKey(key) {
+    if (key === ' ' || key === 'Enter') this.handleClick(0, 0);
+  }
+
   handleClick(x, y) {
     if (!this.running || this.done) return;
     this.p1Clicks++;
