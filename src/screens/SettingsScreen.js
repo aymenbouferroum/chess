@@ -2,24 +2,20 @@ const SettingsScreen = {
   settings: null,
   selectedOption: 0,
   options: [],
+  editingOption: null,
+  editText: '',
+  confirmReset: false,
 
   init() {
     this.settings = { ...store.get('settings') };
+    this.editingOption = null;
+    this.editText = '';
+    this.confirmReset = false;
     this.buildOptions();
   },
 
   buildOptions() {
     this.options = [
-      {
-        label: 'Mini-Games',
-        value: () => this.settings.miniGamesEnabled ? 'ON' : 'OFF',
-        toggle: () => {
-          this.settings.miniGamesEnabled = !this.settings.miniGamesEnabled;
-          store.set('settings', this.settings);
-          store.set('miniGamesEnabled', this.settings.miniGamesEnabled);
-          store.saveProgress();
-        },
-      },
       {
         label: 'Practice Mini-Games',
         value: () => '→',
@@ -67,26 +63,23 @@ const SettingsScreen = {
         label: 'Player 1 Name',
         value: () => store.get('whitePlayer'),
         edit: () => {
-          const name = prompt('Enter Player 1 name:', store.get('whitePlayer'));
-          if (name) { store.set('whitePlayer', name); this.buildOptions(); }
+          this.editingOption = 'whitePlayer';
+          this.editText = store.get('whitePlayer') || 'Player 1';
         },
       },
       {
         label: 'Player 2 Name',
         value: () => store.get('blackPlayer'),
         edit: () => {
-          const name = prompt('Enter Player 2 name:', store.get('blackPlayer'));
-          if (name) { store.set('blackPlayer', name); this.buildOptions(); }
+          this.editingOption = 'blackPlayer';
+          this.editText = store.get('blackPlayer') || 'Player 2';
         },
       },
       {
         label: 'Reset Progress',
         value: () => '',
         action: () => {
-          if (confirm('Reset all progress?')) {
-            store.resetProgress();
-            this.buildOptions();
-          }
+          this.confirmReset = true;
         },
       },
     ];
@@ -106,7 +99,6 @@ const SettingsScreen = {
       ctx.fillStyle = cols.background;
       ctx.fillRect(0, 0, 1280, 800);
     }
-    
 
     ctx.fillStyle = cols.text;
     ctx.font = 'bold 28px monospace';
@@ -124,6 +116,7 @@ const SettingsScreen = {
       const opt = this.options[i];
       const y = startY + i * lineH;
       const isHover = i === this.selectedOption;
+      const isEditing = this.editingOption === opt.label && (opt.label === 'Player 1 Name' || opt.label === 'Player 2 Name');
 
       // Background
       ctx.fillStyle = isHover ? cols.buttonHover : 'transparent';
@@ -142,7 +135,18 @@ const SettingsScreen = {
       ctx.fillText(opt.label, 320, y + 32);
 
       // Value
-      if (opt.value) {
+      if (isEditing) {
+        // Inline text editor
+        ctx.fillStyle = cols.panel;
+        ctx.fillRect(700, y + 10, 200, 30);
+        ctx.strokeStyle = cols.accent;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(700, y + 10, 200, 30);
+        ctx.fillStyle = cols.text;
+        ctx.font = '14px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(this.editText + (Math.floor(Date.now() / 500) % 2 === 0 ? '|' : ''), 710, y + 30);
+      } else if (opt.value) {
         const val = opt.value();
         ctx.fillStyle = cols.text + '88';
         ctx.font = '16px monospace';
@@ -155,16 +159,60 @@ const SettingsScreen = {
     ctx.fillStyle = cols.text + '44';
     ctx.font = '11px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('Click to toggle / edit. ESC to go back.', 640, 750);
+    if (this.editingOption) {
+      ctx.fillText('Type name. Enter to confirm, Escape to cancel.', 640, 750);
+    } else {
+      ctx.fillText('Click to toggle / edit. ESC to go back.', 640, 750);
+    }
 
     // Back button
     UIHelpers.drawButton(ctx, 30, 730, 160, 40, '< Back', cols, { font: 'bold 14px monospace' });
 
     // Theme shortcut
     UIHelpers.drawButton(ctx, 1280 - 180, 730, 150, 40, 'Themes', cols, { font: 'bold 12px monospace' });
+
+    // Reset confirmation dialog
+    if (this.confirmReset) {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(0, 0, 1280, 800);
+
+      ctx.fillStyle = cols.panel;
+      ctx.fillRect(440, 300, 400, 180);
+      ctx.strokeStyle = cols.accent;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(440, 300, 400, 180);
+
+      ctx.fillStyle = cols.text;
+      ctx.font = 'bold 20px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Reset all progress?', 640, 350);
+      ctx.fillStyle = cols.text + '88';
+      ctx.font = '14px monospace';
+      ctx.fillText('This cannot be undone.', 640, 380);
+
+      UIHelpers.drawButton(ctx, 460, 420, 140, 40, 'Yes, Reset', cols, { font: 'bold 13px monospace' });
+      UIHelpers.drawButton(ctx, 680, 420, 140, 40, 'Cancel', cols, { font: 'bold 13px monospace' });
+    }
   },
 
   handleClick(x, y) {
+    // Reset confirmation dialog
+    if (this.confirmReset) {
+      // Yes button
+      if (x >= 460 && x <= 600 && y >= 420 && y <= 460) {
+        store.resetProgress();
+        this.confirmReset = false;
+        this.buildOptions();
+        return;
+      }
+      // Cancel button
+      if (x >= 680 && x <= 820 && y >= 420 && y <= 460) {
+        this.confirmReset = false;
+        return;
+      }
+      return;
+    }
+
     // Back
     if (x >= 30 && x <= 190 && y >= 730 && y <= 770) {
       switchScreen('home');
@@ -173,6 +221,13 @@ const SettingsScreen = {
     // Theme
     if (x >= 1280 - 180 && x <= 1280 - 30 && y >= 730 && y <= 770) {
       switchScreen('themeSelect', { returnTo: 'settings' });
+      return;
+    }
+
+    // If editing, click outside the editor cancels
+    if (this.editingOption) {
+      this.editingOption = null;
+      this.editText = '';
       return;
     }
 
@@ -190,6 +245,7 @@ const SettingsScreen = {
   },
 
   handleMouseMove(x, y) {
+    if (this.confirmReset || this.editingOption) return;
     this.selectedOption = -1;
     const startY = 150;
     const lineH = 60;
@@ -203,6 +259,39 @@ const SettingsScreen = {
   },
 
   handleKeyDown(e) {
+    if (this.confirmReset) {
+      if (e.key === 'Escape') this.confirmReset = false;
+      return;
+    }
+
+    if (this.editingOption) {
+      if (e.key === 'Enter') {
+        const name = this.editText.trim();
+        if (name) {
+          store.set(this.editingOption, name);
+          store.saveProgress();
+        }
+        this.editingOption = null;
+        this.editText = '';
+        return;
+      }
+      if (e.key === 'Escape') {
+        this.editingOption = null;
+        this.editText = '';
+        return;
+      }
+      if (e.key === 'Backspace') {
+        this.editText = this.editText.slice(0, -1);
+        return;
+      }
+      // Only accept printable characters, max 12 chars
+      if (e.key.length === 1 && this.editText.length < 12) {
+        this.editText += e.key;
+        return;
+      }
+      return;
+    }
+
     if (e.key === 'Escape') {
       switchScreen('home');
     }

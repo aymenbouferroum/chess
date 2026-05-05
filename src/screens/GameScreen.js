@@ -13,6 +13,8 @@ const GameScreen = {
   gameResult: null,
   capturedPieces: { white: [], black: [] },
   moveHistory: [],
+  boardSnapshots: [],
+  reviewingAt: null,
   aiThinking: false,
   mode: '1v1',
   currentCharacter: null,
@@ -22,6 +24,11 @@ const GameScreen = {
   pendingRevertMove: null,
   captureCombo: 0,
   comboDisplayTimer: 0,
+  promotionPending: null,
+  promotionHover: null,
+  hoveredSquare: null,
+  gameOverTimer: 0,
+  hoveredGameOverBtn: null,
 
   init(data) {
     this.board = new Board();
@@ -36,8 +43,15 @@ const GameScreen = {
     this.gameResult = null;
     this.capturedPieces = { white: [], black: [] };
     this.moveHistory = [];
+    this.boardSnapshots = [];
+    this.reviewingAt = null;
     this.aiThinking = false;
     this.aiCooldown = 0;
+    this.promotionPending = null;
+    this.promotionHover = null;
+    this.hoveredSquare = null;
+    this.gameOverTimer = 0;
+    this.hoveredGameOverBtn = null;
     this.lastMove = null;
     this.lockedTiles = [];
     this.pendingRevertMove = null;
@@ -48,6 +62,12 @@ const GameScreen = {
     if (this.mode === 'story') {
       this.currentCharacter = store.get('selectedCharacter');
       this.characterLevel = this.currentCharacter ? this.currentCharacter.level : 1;
+    } else if (this.mode === 'classic') {
+      this.currentCharacter = null;
+      this.characterLevel = store.get('classicDifficulty') || 5;
+    } else if (this.mode === 'custom') {
+      this.currentCharacter = null;
+      this.characterLevel = store.get('customDifficulty') || 5;
     } else {
       this.currentCharacter = null;
       this.characterLevel = 0;
@@ -73,6 +93,67 @@ const GameScreen = {
     audioManager.stopMusic();
   },
 
+  saveSnapshot() {
+    const snap = {
+      grid: this.board.grid.map(row => row.map(cell => cell ? { type: cell.type, color: cell.color } : null)),
+      turn: this.turn,
+      castlingRights: JSON.parse(JSON.stringify(this.board.castlingRights)),
+      enPassantTarget: this.board.enPassantTarget ? { ...this.board.enPassantTarget } : null,
+      halfMoveClock: this.board.halfMoveClock,
+      moveHistory: [...this.moveHistory.map(m => ({ from: { ...m.from }, to: { ...m.to }, piece: m.piece ? { ...m.piece } : null, captured: m.captured ? { ...m.captured } : null }))],
+      capturedPieces: JSON.parse(JSON.stringify(this.capturedPieces)),
+      gameStatus: this.gameStatus,
+      gameOver: this.gameOver,
+      gameResult: this.gameResult,
+      selectedSquare: this.selectedSquare ? { ...this.selectedSquare } : null,
+      legalMoves: this.legalMoves.map(m => ({ ...m })),
+      lastMove: this.lastMove ? { from: { ...this.lastMove.from }, to: { ...this.lastMove.to } } : null,
+      lockedTiles: this.lockedTiles.map(t => ({ ...t })),
+      inCheck: this.board.inCheck,
+    };
+    // Keep only last 200 snapshots
+    if (this.boardSnapshots.length > 200) this.boardSnapshots.shift();
+    this.boardSnapshots.push(snap);
+  },
+
+  restoreSnapshot(snap) {
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        this.board.grid[r][c] = snap.grid[r][c];
+      }
+    }
+    this.board.castlingRights = snap.castlingRights;
+    this.board.enPassantTarget = snap.enPassantTarget;
+    this.board.halfMoveClock = snap.halfMoveClock;
+    this.board.inCheck = snap.inCheck;
+    this.moveHistory = snap.moveHistory;
+    this.capturedPieces = snap.capturedPieces;
+    this.gameStatus = snap.gameStatus;
+    this.gameOver = snap.gameOver;
+    this.gameResult = snap.gameResult;
+    this.selectedSquare = snap.selectedSquare;
+    this.legalMoves = snap.legalMoves;
+    this.lastMove = snap.lastMove;
+    this.lockedTiles = snap.lockedTiles;
+  },
+
+  goToMove(index) {
+    if (index < 0 || index >= this.boardSnapshots.length) return;
+    this.restoreSnapshot(this.boardSnapshots[index]);
+    this.reviewingAt = index;
+  },
+
+  goToLive() {
+    if (this.reviewingAt === null) return;
+    const last = this.boardSnapshots[this.boardSnapshots.length - 1];
+    if (last) {
+      this.restoreSnapshot(last);
+      this.turn = last.turn;
+      this.aiThinking = false;
+    }
+    this.reviewingAt = null;
+  },
+
   render(ctx, dt) {
     const theme = ThemeManager.getTheme(store.get('theme'));
     const cols = theme.colors;
@@ -81,7 +162,9 @@ const GameScreen = {
       this.aiCooldown -= dt * 1000;
       if (this.aiCooldown < 0) this.aiCooldown = 0;
     }
-    if (this.mode === 'story' && this.turn === 'black' && !this.aiThinking && !this.gameOver && this.aiCooldown <= 0) {
+    const isAIMode = this.mode === 'story' || this.mode === 'classic';
+    const isLive = this.reviewingAt === null;
+    if (isLive && isAIMode && this.turn === 'black' && !this.aiThinking && !this.gameOver && this.aiCooldown <= 0) {
       this.doAIMove();
     }
 
@@ -92,23 +175,29 @@ const GameScreen = {
       this.lastMove,
       this.turn,
       this.gameStatus,
-      this.boardRenderer.animations.length > 0,
+      false,
       this.lockedTiles,
-      dt
+      dt,
+      this.hoveredSquare
     );
 
     this.renderSidePanel(ctx, cols, 'left', 'white');
     this.renderSidePanel(ctx, cols, 'right', 'black');
     this.renderStatusBar(ctx, cols);
 
+    // Game over overlay
     if (this.gameOver) {
+      this.gameOverTimer = Math.min(1, this.gameOverTimer + dt * 2);
+      const a = this.gameOverTimer;
+
+      ctx.globalAlpha = a;
       ctx.fillStyle = 'rgba(0,0,0,0.6)';
       ctx.fillRect(0, 0, 1280, 800);
       ctx.fillStyle = cols.panel;
-      ctx.fillRect(340, 200, 600, 360);
+      ctx.fillRect(340, 200, 600, 400);
       ctx.strokeStyle = cols.accent;
       ctx.lineWidth = 3;
-      ctx.strokeRect(340, 200, 600, 360);
+      ctx.strokeRect(340, 200, 600, 400);
       ctx.fillStyle = cols.text;
       ctx.font = 'bold 36px monospace';
       ctx.textAlign = 'center';
@@ -117,6 +206,16 @@ const GameScreen = {
       else if (this.gameResult === 'black') msg = 'Black Wins!';
       else if (this.gameResult === 'draw') msg = 'Draw!';
       ctx.fillText(msg, 640, 280);
+
+      ctx.fillStyle = cols.text + 'aa';
+      ctx.font = '14px monospace';
+      let reason = '';
+      if (this.gameStatus === 'checkmate') reason = 'by Checkmate';
+      else if (this.gameStatus === 'stalemate') reason = 'by Stalemate';
+      else if (this.gameStatus === 'draw') reason = 'by Draw';
+      else if (this.gameStatus === 'resigned') reason = 'by Resignation';
+      if (reason) ctx.fillText(reason, 640, 300);
+
       if (this.gameResult && this.currentCharacter) {
         ctx.fillStyle = cols.text + 'aa';
         ctx.font = '16px monospace';
@@ -124,28 +223,67 @@ const GameScreen = {
         const dlg = this.gameResult === 'white'
           ? this.currentCharacter.dialogue.after
           : this.currentCharacter.dialogue.win;
-        this.wrapText(ctx, dlg, 380, 310, 520, 22);
+        this.wrapText(ctx, dlg, 380, 320, 520, 22);
       }
       const buttons = [
-        { text: 'Play Again', action: 'rematch', x: 440, y: 450 },
-        { text: 'Menu', action: 'menu', x: 640, y: 450 },
-        { text: 'Themes', action: 'themes', x: 840, y: 450 },
+        { text: 'Play Again', action: 'rematch', x: 440, y: 460 },
+        { text: 'Menu', action: 'menu', x: 640, y: 460 },
+        { text: 'Themes', action: 'themes', x: 840, y: 460 },
       ];
       if (this.mode === 'story' && this.gameResult === 'white') {
-        buttons.push({ text: 'Next Level', action: 'next', x: 540, y: 510 });
+        buttons.push({ text: 'Next Level', action: 'next', x: 540, y: 520 });
       }
       for (const btn of buttons) {
-        UIHelpers.drawButton(ctx, btn.x - 80, btn.y, 160, 40, btn.text, cols, { font: 'bold 14px monospace' });
+        const isHover = this.hoveredGameOverBtn === btn.action;
+        UIHelpers.drawButton(ctx, btn.x - 80, btn.y, 160, 40, btn.text, cols, { font: 'bold 14px monospace', hover: isHover });
         btn._bounds = { x: btn.x - 80, y: btn.y, w: 160, h: 40 };
       }
+      ctx.globalAlpha = 1;
     }
 
+    // AI thinking indicator
     if (this.aiThinking) {
       ctx.fillStyle = cols.text + '88';
       ctx.font = '14px monospace';
       ctx.textAlign = 'center';
       const dots = '.'.repeat(Math.floor(Date.now() / 500) % 4);
       ctx.fillText('Opponent is thinking' + dots, 640, 30);
+    }
+
+    // Promotion dialog
+    if (this.promotionPending) {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(0, 0, 1280, 800);
+
+      const sqSize = this.boardRenderer.squareSize;
+      const types = ['queen', 'rook', 'bishop', 'knight'];
+      const totalW = types.length * sqSize + (types.length - 1) * 10;
+      const startX = 640 - totalW / 2;
+      const startY = 400 - sqSize / 2;
+
+      ctx.fillStyle = cols.panel;
+      const pad = 15;
+      ctx.fillRect(startX - pad, startY - pad - 30, totalW + pad * 2, sqSize + pad * 2 + 30);
+      ctx.strokeStyle = cols.accent;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(startX - pad, startY - pad - 30, totalW + pad * 2, sqSize + pad * 2 + 30);
+
+      ctx.fillStyle = cols.text;
+      ctx.font = 'bold 18px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('PROMOTE TO:', 640, startY - 10);
+
+      for (let i = 0; i < types.length; i++) {
+        const bx = startX + i * (sqSize + 10);
+        const isHovered = this.promotionHover === types[i];
+        ctx.fillStyle = isHovered ? cols.highlight + '40' : cols.lightSquare;
+        ctx.fillRect(bx, startY, sqSize, sqSize);
+        ctx.strokeStyle = isHovered ? cols.highlight : cols.text + '44';
+        ctx.lineWidth = isHovered ? 3 : 1;
+        ctx.strokeRect(bx, startY, sqSize, sqSize);
+        const padding = Math.max(2, Math.floor(sqSize * 0.06));
+        PieceRenderer.drawPiece(ctx, types[i], this.turn, theme, bx + padding, startY + padding, sqSize - padding * 2);
+      }
     }
 
     // Combo display
@@ -183,7 +321,7 @@ const GameScreen = {
     ctx.font = isPlayerTurn ? 'bold 13px monospace' : '13px monospace';
     ctx.textAlign = 'left';
     ctx.fillText(playerName, x + 10, y + 25);
-    ctx.fillStyle = color === 'white' ? '#fff' : '#222';
+    ctx.fillStyle = color === 'white' ? cols.lightPiece : cols.darkPiece;
     ctx.strokeStyle = cols.text + '44';
     ctx.lineWidth = 1;
     ctx.fillRect(x + 10, y + 33, 14, 14);
@@ -197,7 +335,7 @@ const GameScreen = {
     let py = y + 75;
     ctx.font = '12px monospace';
     for (const p of captured.slice(0, 20)) {
-      ctx.fillStyle = p.color === 'white' ? '#fff' : '#222';
+      ctx.fillStyle = p.color === 'white' ? cols.lightPiece : cols.darkPiece;
       ctx.fillText(pieceSymbols[p.type] || '?', px, py);
       px += 14;
       if (px > x + w - 10) { px = x + 10; py += 14; }
@@ -210,6 +348,26 @@ const GameScreen = {
       ctx.font = 'bold 11px monospace';
       ctx.fillText(this.currentCharacter.name, x + 10, y + 400);
     }
+
+    // Move history on left panel
+    if (isLeft && this.moveHistory.length > 0) {
+      ctx.fillStyle = cols.text + '44';
+      ctx.font = '10px monospace';
+      ctx.fillText('Moves:', x + 10, y + 430);
+      ctx.fillStyle = cols.text + '66';
+      ctx.font = '9px monospace';
+      const files = 'abcdefgh';
+      const recentMoves = this.moveHistory.slice(-8);
+      let my = y + 445;
+      for (let i = 0; i < recentMoves.length; i++) {
+        const m = recentMoves[i];
+        const moveNum = this.moveHistory.length - recentMoves.length + i + 1;
+        const pieceChar = { pawn: '', knight: 'N', bishop: 'B', rook: 'R', queen: 'Q', king: 'K' }[m.piece?.type || 'pawn'] || '';
+        const to = files[m.to.col] + (8 - m.to.row);
+        ctx.fillText(moveNum + '. ' + pieceChar + to, x + 10, my);
+        my += 14;
+      }
+    }
   },
 
   renderStatusBar(ctx, cols) {
@@ -221,7 +379,7 @@ const GameScreen = {
     ctx.textAlign = 'center';
     const turnText = this.turn === 'white' ? "White's Turn" : "Black's Turn";
     if (this.gameStatus === 'check') {
-      ctx.fillStyle = '#ff4444';
+      ctx.fillStyle = cols.checkHighlight || cols.accent;
       ctx.font = 'bold 14px monospace';
       ctx.fillText('CHECK!', 640, y + 18);
       ctx.fillStyle = cols.text + '88';
@@ -230,17 +388,37 @@ const GameScreen = {
     } else {
       ctx.fillText(turnText, 640, y + 22);
     }
+
+    // Move navigation buttons
+    const isReviewing = this.reviewingAt !== null;
+    const navY = y + 5;
+    const navEnabled = this.boardSnapshots.length > 1;
+
+    // Back button
+    ctx.fillStyle = navEnabled && this.reviewingAt !== 0 ? cols.text : cols.text + '22';
+    ctx.font = 'bold 16px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('◀', 210, navY + 18);
+
+    // Forward button
+    ctx.fillStyle = navEnabled && isReviewing && this.reviewingAt < this.boardSnapshots.length - 1 ? cols.text : cols.text + '22';
+    ctx.fillText('▶', 228, navY + 18);
+
+    // Live button
+    ctx.fillStyle = isReviewing ? cols.accent : cols.text + '22';
+    ctx.font = '9px monospace';
+    ctx.fillText('LIVE', 248, navY + 18);
+
     ctx.fillStyle = cols.text + '66';
     ctx.font = '10px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText('Move #' + this.moveHistory.length, 1060, y + 22);
-    const mgEnabled = store.get('miniGamesEnabled');
-    ctx.fillStyle = mgEnabled ? cols.accent : cols.text + '44';
-    ctx.font = '10px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText('Mini-games: ' + (mgEnabled ? 'ON' : 'OFF'), 220, y + 22);
+    const snapIdx = isReviewing ? (this.reviewingAt + 1) : this.boardSnapshots.length;
+    ctx.fillText('Move #' + snapIdx, 1060, y + 22);
+
     if (this.lockedTiles.length > 0) {
-      ctx.fillStyle = '#ff4444';
+      ctx.fillStyle = cols.checkHighlight || cols.accent;
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'left';
       ctx.fillText('Locked: ' + this.lockedTiles.length, 320, y + 22);
     }
     ctx.fillStyle = cols.text + '44';
@@ -250,12 +428,37 @@ const GameScreen = {
   },
 
   handleClick(x, y) {
+    // Promotion dialog
+    if (this.promotionPending) {
+      const sqSize = this.boardRenderer.squareSize;
+      const types = ['queen', 'rook', 'bishop', 'knight'];
+      const totalW = types.length * sqSize + (types.length - 1) * 10;
+      const startX = 640 - totalW / 2;
+      const startY = 400 - sqSize / 2;
+
+      for (let i = 0; i < types.length; i++) {
+        const bx = startX + i * (sqSize + 10);
+        if (x >= bx && x <= bx + sqSize && y >= startY && y <= startY + sqSize) {
+          const move = this.promotionPending.moves.find(m => m.promotion === types[i]);
+          if (move) {
+            this.promotionPending = null;
+            this.promotionHover = null;
+            this.executePlayerMove(move);
+            audioManager.playPromotion();
+          }
+          return;
+        }
+      }
+      return;
+    }
+
+    // Game over buttons
     if (this.gameOver) {
       for (const btn of [
-        { text: 'Play Again', action: 'rematch', bx: 360, by: 450 },
-        { text: 'Menu', action: 'menu', bx: 560, by: 450 },
-        { text: 'Themes', action: 'themes', bx: 760, by: 450 },
-        { text: 'Next Level', action: 'next', bx: 460, by: 510 },
+        { text: 'Play Again', action: 'rematch', bx: 360, by: 460 },
+        { text: 'Menu', action: 'menu', bx: 560, by: 460 },
+        { text: 'Themes', action: 'themes', bx: 760, by: 460 },
+        { text: 'Next Level', action: 'next', bx: 460, by: 520 },
       ]) {
         if (x >= btn.bx && x <= btn.bx + 160 && y >= btn.by && y <= btn.by + 40) {
           this.handleGameOverAction(btn.action);
@@ -264,13 +467,40 @@ const GameScreen = {
       }
       return;
     }
+
+    // Move navigation buttons in status bar
+    const navY = 745 + 5;
+    if (y >= navY && y <= navY + 25) {
+      if (x >= 208 && x <= 222) {
+        // Back
+        if (this.reviewingAt !== 0 && this.boardSnapshots.length > 1) {
+          const idx = this.reviewingAt === null ? this.boardSnapshots.length - 2 : this.reviewingAt - 1;
+          this.goToMove(Math.max(0, idx));
+        }
+        return;
+      }
+      if (x >= 226 && x <= 240) {
+        // Forward
+        if (this.reviewingAt !== null && this.reviewingAt < this.boardSnapshots.length - 1) {
+          this.goToMove(this.reviewingAt + 1);
+        }
+        return;
+      }
+      if (x >= 244 && x <= 275) {
+        // Live
+        this.goToLive();
+        return;
+      }
+    }
+
+    // Don't allow moves while reviewing
+    if (this.reviewingAt !== null) return;
     if (this.aiThinking) return;
 
     const boardPos = this.boardRenderer.screenToBoard(x, y);
     if (!boardPos) return;
     const { row, col } = boardPos;
 
-    // Check if tile is locked
     if (this.lockedTiles.some(t => t.row === row && t.col === col)) {
       audioManager.playTileLock();
       return;
@@ -279,9 +509,22 @@ const GameScreen = {
     const clicked = this.board.grid[row][col];
 
     if (this.selectedSquare) {
+      const selectedPiece = this.board.grid[this.selectedSquare.row][this.selectedSquare.col];
+      const isPromotion = selectedPiece && selectedPiece.type === 'pawn' && (row === 0 || row === 7);
+
+      if (isPromotion) {
+        const promoMoves = this.legalMoves.filter(m =>
+          m.to.row === row && m.to.col === col && m.promotion
+        );
+        if (promoMoves.length > 0) {
+          this.promotionPending = { moves: promoMoves, toSquare: { row, col } };
+          audioManager.playSelect();
+          return;
+        }
+      }
+
       const move = this.legalMoves.find(m =>
-        m.to.row === row && m.to.col === col &&
-        (!m.promotion || m.promotion === 'queen')
+        m.to.row === row && m.to.col === col && !m.promotion
       );
       if (move) {
         this.executePlayerMove(move);
@@ -293,7 +536,6 @@ const GameScreen = {
       this.selectedSquare = { row, col };
       audioManager.playSelect();
       let moves = GameRules.getLegalMoves(this.board, this.turn);
-      // Filter out locked tiles
       moves = moves.filter(m => !this.lockedTiles.some(t => t.row === m.to.row && t.col === m.to.col));
       this.legalMoves = moves.filter(m => m.from.row === row && m.from.col === col);
     } else {
@@ -302,7 +544,58 @@ const GameScreen = {
     }
   },
 
-  handleMouseMove(x, y) {},
+  handleMouseMove(x, y) {
+    const canvas = document.getElementById('gameCanvas');
+
+    if (this.promotionPending) {
+      const sqSize = this.boardRenderer.squareSize;
+      const types = ['queen', 'rook', 'bishop', 'knight'];
+      const totalW = types.length * sqSize + (types.length - 1) * 10;
+      const startX = 640 - totalW / 2;
+      const startY = 400 - sqSize / 2;
+      let hovered = null;
+      for (let i = 0; i < types.length; i++) {
+        const bx = startX + i * (sqSize + 10);
+        if (x >= bx && x <= bx + sqSize && y >= startY && y <= startY + sqSize) {
+          hovered = types[i];
+          break;
+        }
+      }
+      this.promotionHover = hovered;
+      canvas.style.cursor = hovered ? 'pointer' : 'default';
+      return;
+    }
+
+    const boardPos = this.boardRenderer.screenToBoard(x, y);
+    this.hoveredSquare = boardPos;
+
+    if (this.gameOver) {
+      this.hoveredGameOverBtn = null;
+      for (const btn of [
+        { action: 'rematch', x: 360, y: 460, w: 160, h: 40 },
+        { action: 'menu', x: 560, y: 460, w: 160, h: 40 },
+        { action: 'themes', x: 760, y: 460, w: 160, h: 40 },
+        { action: 'next', x: 460, y: 520, w: 160, h: 40 },
+      ]) {
+        if (x >= btn.x && x <= btn.x + btn.w && y >= btn.y && y <= btn.y + btn.h) {
+          this.hoveredGameOverBtn = btn.action;
+          canvas.style.cursor = 'pointer';
+          break;
+        }
+      }
+      if (!this.hoveredGameOverBtn) canvas.style.cursor = 'default';
+      return;
+    }
+
+    if (boardPos && !this.aiThinking && this.reviewingAt === null) {
+      const piece = this.board.grid[boardPos.row][boardPos.col];
+      const isLegalTarget = this.legalMoves.some(m => m.to.row === boardPos.row && m.to.col === boardPos.col);
+      const isOwnPiece = piece && piece.color === this.turn;
+      canvas.style.cursor = (isLegalTarget || isOwnPiece) ? 'pointer' : 'default';
+    } else {
+      canvas.style.cursor = 'default';
+    }
+  },
 
   handleKeyDown(e) {
     if (e.key === 'Escape') {
@@ -310,6 +603,17 @@ const GameScreen = {
         switchScreen('home');
       } else {
         PauseMenu.show();
+      }
+    }
+    if (e.key === 'ArrowLeft' && this.boardSnapshots.length > 1) {
+      const idx = this.reviewingAt === null ? this.boardSnapshots.length - 2 : this.reviewingAt - 1;
+      this.goToMove(Math.max(0, idx));
+    }
+    if (e.key === 'ArrowRight') {
+      if (this.reviewingAt !== null && this.reviewingAt < this.boardSnapshots.length - 1) {
+        this.goToMove(this.reviewingAt + 1);
+      } else if (this.reviewingAt !== null && this.reviewingAt === this.boardSnapshots.length - 1) {
+        this.goToLive();
       }
     }
   },
@@ -320,11 +624,9 @@ const GameScreen = {
     const isCapture = !!captured;
 
     if (isCapture) {
-      // 30% chance to trigger mini-game
       if (MiniGameManager.shouldTriggerMiniGame()) {
-        // Show mini-game: attacker (current player) plays
         const isDuel = MiniGameManager.isDuel(piece, captured);
-        const isAIAttacking = this.mode === 'story' && this.turn === 'black';
+        const isAIAttacking = (this.mode === 'story' || this.mode === 'classic') && this.turn === 'black';
 
         this.pendingRevertMove = { move, piece, captured };
 
@@ -333,10 +635,8 @@ const GameScreen = {
           isAIAttacking,
           (winner) => {
             if (winner === 'attacker') {
-              // Attacker wins: capture succeeds
               this.executeCaptureMove(move, piece, captured);
             } else {
-              // Attacker loses: revert piece, lock the tile
               this.revertMoveAndLockTile(move);
             }
           }
@@ -345,7 +645,6 @@ const GameScreen = {
       }
     }
 
-    // Normal move (no mini-game or no capture)
     this.lastMoveWasCapture = !!captured;
     if (!captured) this.captureCombo = 0;
     this.executeCaptureMove(move, piece, captured);
@@ -367,30 +666,61 @@ const GameScreen = {
       const cy = toScreen.y + this.boardRenderer.squareSize / 2;
       this.particleFX.captureEffect(cx, cy, theme);
 
-      // Screen shake on capture
       this.boardRenderer.triggerScreenShake(8);
+      this.boardRenderer.triggerCaptureFlash(move.to.row, move.to.col);
       audioManager.playCapture();
       audioManager.playScreenShake();
     } else {
       audioManager.playMove();
+      const theme = ThemeManager.getTheme(store.get('theme'));
+      const toScreen = this.boardRenderer.boardToScreen(move.to.row, move.to.col);
+      const cx = toScreen.x + this.boardRenderer.squareSize / 2;
+      const cy = toScreen.y + this.boardRenderer.squareSize / 2;
+      this.particleFX.moveEffect(cx, cy, theme);
     }
 
+    move.piece = piece;
+    move.captured = captured;
     MoveExecutor.executeMove(this.board, move, this.turn);
+    this.saveSnapshot();
     this.afterMove(move);
   },
 
   revertMoveAndLockTile(move) {
-    // Don't execute the move - piece stays where it is
-    // Lock the destination tile for this turn
     this.lockedTiles.push({ row: move.to.row, col: move.to.col });
     audioManager.playTileLock();
-
-    // Clear selection and recompute legal moves
     this.selectedSquare = null;
     this.legalMoves = [];
-
-    // Show notification
     store.update({ board: this.board });
+
+    // After locking a square, check if the current player is now in checkmate/stalemate
+    this.checkForLockedTileGameEnd();
+  },
+
+  checkForLockedTileGameEnd() {
+    const legalMoves = GameRules.getLegalMoves(this.board, this.turn);
+    const availableMoves = legalMoves.filter(m =>
+      !this.lockedTiles.some(t => t.row === m.to.row && t.col === m.to.col)
+    );
+
+    if (availableMoves.length === 0) {
+      // No legal moves that avoid locked tiles
+      if (this.board.inCheck) {
+        // In check with no escape = checkmate
+        this.gameOver = true;
+        this.gameStatus = 'checkmate';
+        this.gameResult = this.turn === 'white' ? 'black' : 'white';
+        this.handleGameEnd();
+        audioManager.playVictory();
+      } else {
+        // Not in check with no legal moves = stalemate
+        this.gameOver = true;
+        this.gameStatus = 'stalemate';
+        this.gameResult = 'draw';
+        this.handleGameEnd();
+        audioManager.playGameOver();
+      }
+    }
   },
 
   afterMove(move) {
@@ -399,7 +729,7 @@ const GameScreen = {
     this.turn = this.turn === 'white' ? 'black' : 'white';
     this.selectedSquare = null;
     this.legalMoves = [];
-    this.lockedTiles = []; // Clear locked tiles on turn change
+    this.lockedTiles = [];
     this.pendingRevertMove = null;
 
     const status = GameRules.getGameStatus(this.board, this.turn);
@@ -433,69 +763,106 @@ const GameScreen = {
   doAIMove() {
     this.aiThinking = true;
 
-    setTimeout(() => {
-      if (this.gameOver) { this.aiThinking = false; return; }
-
-      // Get all legal moves and filter out locked tiles
-      let legalMoves = GameRules.getLegalMoves(this.board, 'black');
-      legalMoves = legalMoves.filter(m =>
-        !this.lockedTiles.some(t => t.row === m.to.row && t.col === m.to.col)
-      );
-
-      if (legalMoves.length === 0) {
-        this.aiThinking = false;
-        const status = GameRules.getGameStatus(this.board, 'black');
-        this.gameStatus = status.status;
-        if (status.status === 'checkmate' || status.status === 'stalemate') {
-          this.gameOver = true;
-          this.gameResult = 'white';
-        }
-        return;
-      }
-
-      let move = AIController.getMove(this.board, 'black', this.characterLevel);
-      // If AI chose a locked tile, pick the best alternative
-      if (move && this.lockedTiles.some(t => t.row === move.to.row && t.col === move.to.col)) {
-        move = null;
-      }
-      if (!move) {
-        // Fallback: pick from valid moves
-        if (legalMoves.length === 1) {
-          move = legalMoves[0];
-        } else {
-          move = legalMoves[Math.floor(Math.random() * legalMoves.length)];
-        }
-      }
-
-      const piece = this.board.grid[move.from.row][move.from.col];
-      const captured = this.board.grid[move.to.row][move.to.col];
-      const isCapture = !!captured;
-
-      if (isCapture && MiniGameManager.shouldTriggerMiniGame()) {
-        this.aiCooldown = 600;
-        miniGameManager.startMiniGame(
-          piece, captured, move.to,
-          true, // AI is attacking
-          (winner) => {
-            if (winner === 'attacker') {
-              this.executeCaptureMove(move, piece, captured);
-            } else {
-              // AI lost: revert and lock tile for AI's turn
-              this.lockedTiles.push({ row: move.to.row, col: move.to.col });
-              audioManager.playTileLock();
-              this.selectedSquare = null;
-              this.legalMoves = [];
-            }
-            this.aiThinking = false;
-            this.aiCooldown = 600;
-          }
-        );
-        return;
-      }
-
-      this.executeCaptureMove(move, piece, captured);
+    // Safety timeout: if AI takes longer than 10 seconds, force-reset
+    const safetyTimer = setTimeout(() => {
+      console.error('AI safety timeout triggered — forcing aiThinking = false');
       this.aiThinking = false;
-    }, 150 + Math.random() * 200);
+      this.aiCooldown = 500;
+    }, 10000);
+
+    setTimeout(async () => {
+      try {
+        if (this.gameOver) { this.aiThinking = false; clearTimeout(safetyTimer); return; }
+
+        let legalMoves = GameRules.getLegalMoves(this.board, 'black');
+        legalMoves = legalMoves.filter(m =>
+          !this.lockedTiles.some(t => t.row === m.to.row && t.col === m.to.col)
+        );
+
+        if (legalMoves.length === 0) {
+          this.aiThinking = false;
+          clearTimeout(safetyTimer);
+          if (this.board.inCheck) {
+            // Checkmate (or locked tiles blocking all escape — same result)
+            this.gameOver = true;
+            this.gameStatus = 'checkmate';
+            this.gameResult = 'white';
+            this.handleGameEnd();
+            audioManager.playVictory();
+          } else {
+            // Stalemate (no legal moves, not in check)
+            this.gameOver = true;
+            this.gameStatus = 'stalemate';
+            this.gameResult = 'draw';
+            this.handleGameEnd();
+            audioManager.playGameOver();
+          }
+          return;
+        }
+
+        let move = null;
+        try {
+          move = await AIController.getMoveAsync(this.board, 'black', this.characterLevel, legalMoves);
+        } catch (e) {
+          console.error('AIController.getMoveAsync error:', e);
+          try {
+            move = AIController.getMove(this.board, 'black', this.characterLevel);
+          } catch (e2) {
+            console.error('AIController.getMove error:', e2);
+          }
+        }
+        if (move && this.lockedTiles.some(t => t.row === move.to.row && t.col === move.to.col)) {
+          move = null;
+        }
+        if (!move) {
+          move = legalMoves.length === 1 ? legalMoves[0] : legalMoves[Math.floor(Math.random() * legalMoves.length)];
+        }
+
+        const piece = this.board.grid[move.from.row][move.from.col];
+        const captured = this.board.grid[move.to.row][move.to.col];
+        const isCapture = !!captured;
+
+        if (isCapture && MiniGameManager.shouldTriggerMiniGame()) {
+          clearTimeout(safetyTimer);
+          this.aiCooldown = 600;
+          miniGameManager.startMiniGame(
+            piece, captured, move.to,
+            true,
+            (winner) => {
+              if (winner === 'attacker') {
+                this.executeCaptureMove(move, piece, captured);
+              } else {
+                this.lockedTiles.push({ row: move.to.row, col: move.to.col });
+                audioManager.playTileLock();
+                this.selectedSquare = null;
+                this.legalMoves = [];
+                // Check if locked tile creates checkmate/stalemate
+                this.checkForLockedTileGameEnd();
+              }
+              this.aiThinking = false;
+              this.aiCooldown = 600;
+            }
+          );
+          return;
+        }
+
+        this.executeCaptureMove(move, piece, captured);
+        this.aiThinking = false;
+      } catch (e) {
+        console.error('doAIMove error:', e);
+        this.aiThinking = false;
+      }
+      clearTimeout(safetyTimer);
+    }, 500 + Math.random() * 700);
+  },
+
+  surrender() {
+    if (this.gameOver) return;
+    this.gameOver = true;
+    this.gameStatus = 'resigned';
+    this.gameResult = this.turn === 'white' ? 'black' : 'white';
+    this.handleGameEnd();
+    audioManager.playGameOver();
   },
 
   handleGameEnd() {

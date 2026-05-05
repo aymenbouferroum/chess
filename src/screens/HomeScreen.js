@@ -23,6 +23,7 @@ const HomeScreen = {
       { text: 'Story Mode', sub: 'Battle unique characters', action: 'story', group: 'main' },
       { text: 'Local 1v1', sub: 'Play with a friend', action: '1v1', group: 'main' },
       { text: 'Classic Chess', sub: 'Challenge the AI engine', action: 'classic', group: 'main' },
+      { text: 'Custom Game', sub: 'Configure your own rules', action: 'custom', group: 'main' },
       { text: 'Settings', action: 'settings', group: 'util', idx: 0 },
       { text: 'How to Play', action: 'help', group: 'util', idx: 1 },
       { text: 'Stats', action: 'stats', group: 'util', idx: 2 },
@@ -49,10 +50,10 @@ const HomeScreen = {
 
   _getMainBounds(i) {
     const bw = 420;
-    const bh = 65;
-    const gap = 12;
+    const bh = 58;
+    const gap = 10;
     const bx = (1280 - bw) / 2;
-    const startY = 340;
+    const startY = 320;
     return { x: bx, y: startY + i * (bh + gap), w: bw, h: bh };
   },
 
@@ -62,7 +63,7 @@ const HomeScreen = {
     const gap = 20;
     const totalW = 3 * btnW + 2 * gap;
     const startX = (1280 - totalW) / 2;
-    const rowY = 580;
+    const rowY = 620;
     return { x: startX + idx * (btnW + gap), y: rowY, w: btnW, h: btnH };
   },
 
@@ -161,7 +162,7 @@ const HomeScreen = {
     ctx.fillText(themeName, 640, 307);
 
     // --- Main game mode buttons ---
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       const btn = this.buttons[i];
       const b = this._getMainBounds(i);
       const isHover = i === this.selectedButton;
@@ -218,12 +219,12 @@ const HomeScreen = {
     ctx.strokeStyle = cols.text + '15';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(460, 555);
-    ctx.lineTo(820, 555);
+    ctx.moveTo(460, 596);
+    ctx.lineTo(820, 596);
     ctx.stroke();
 
     // --- Utility buttons row ---
-    for (let i = 3; i < 6; i++) {
+    for (let i = 4; i < 7; i++) {
       const btn = this.buttons[i];
       const b = this._getUtilBounds(btn.idx);
       const isHover = i === this.selectedButton;
@@ -286,15 +287,15 @@ const HomeScreen = {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (btn.group === 'util') {
-        this.selectedButton = 2;
+        this.selectedButton = 3;
       } else if (this.selectedButton > 0) {
         this.selectedButton--;
       }
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (btn.group === 'main' && this.selectedButton < 2) {
+      if (btn.group === 'main' && this.selectedButton < 3) {
         this.selectedButton++;
-      } else if (btn.group === 'main' && this.selectedButton === 2) {
+      } else if (btn.group === 'main' && this.selectedButton === 3) {
         this.selectedButton = 4;
       }
     } else if (e.key === 'ArrowLeft') {
@@ -327,10 +328,10 @@ const HomeScreen = {
         switchScreen('game');
         break;
       case 'classic':
-        store.set('mode', 'classic');
-        store.set('p1IsWhite', true);
-        store.set('miniGamesEnabled', false);
-        switchScreen('game');
+        switchScreen('botSelect');
+        break;
+      case 'custom':
+        switchScreen('customGame');
         break;
       case 'settings':
         switchScreen('settings');

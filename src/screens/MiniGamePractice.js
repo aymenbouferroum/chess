@@ -17,6 +17,8 @@ const MiniGamePractice = {
       { name: 'Rhythm Tap', type: RhythmTap },
       { name: 'Number Guess', type: NumberGuess },
       { name: 'Coin Flip', type: CoinFlip },
+      { name: 'Shield Block', type: ShieldBlock },
+      { name: 'Whack-a-Mole', type: WhackMole },
     ];
   },
 

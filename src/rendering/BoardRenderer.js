@@ -10,6 +10,7 @@ class BoardRenderer {
     this.shakeFrames = 0;
     this.captureFlash = null;
     this.flashAlpha = 0;
+    this.checkPulseTime = 0;
   }
 
   calcLayout() {
@@ -35,7 +36,7 @@ class BoardRenderer {
     return { row, col };
   }
 
-  render(ctx, board, theme, selected, legalMoves, lastMove, turn, gameStatus, animating, lockedTiles, dt) {
+  render(ctx, board, theme, selected, legalMoves, lastMove, turn, gameStatus, animating, lockedTiles, dt, hoveredSquare) {
     this.calcLayout();
     const { boardX, boardY, squareSize } = this;
     const cols = theme.colors;
@@ -55,6 +56,9 @@ class BoardRenderer {
       this.flashAlpha -= 0.06;
       if (this.flashAlpha < 0) this.flashAlpha = 0;
     }
+
+    // Check pulse timer
+    this.checkPulseTime += dt;
 
     ctx.save();
     ctx.translate(this.shakeOffset.x, this.shakeOffset.y);
@@ -124,9 +128,9 @@ class BoardRenderer {
       for (const tile of lockedTiles) {
         const sx = boardX + tile.col * squareSize;
         const sy = boardY + tile.row * squareSize;
-        ctx.fillStyle = 'rgba(255,0,0,0.2)';
+        ctx.fillStyle = cols.checkHighlight + '33';
         ctx.fillRect(sx + 1, sy + 1, squareSize - 2, squareSize - 2);
-        ctx.strokeStyle = '#ff4444';
+        ctx.strokeStyle = cols.checkHighlight;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(sx + 4, sy + 4);
@@ -160,6 +164,14 @@ class BoardRenderer {
       ctx.strokeRect(sx + 1, sy + 1, squareSize - 2, squareSize - 2);
     }
 
+    // Hover highlight
+    if (hoveredSquare && !(selected && hoveredSquare.row === selected.row && hoveredSquare.col === selected.col)) {
+      const sx = boardX + hoveredSquare.col * squareSize;
+      const sy = boardY + hoveredSquare.row * squareSize;
+      ctx.fillStyle = cols.highlight + '18';
+      ctx.fillRect(sx + 1, sy + 1, squareSize - 2, squareSize - 2);
+    }
+
     // Legal move indicators
     if (legalMoves) {
       for (const move of legalMoves) {
@@ -186,10 +198,14 @@ class BoardRenderer {
       if (kingPos) {
         const sx = boardX + kingPos.col * squareSize;
         const sy = boardY + kingPos.row * squareSize;
-        const pulse = Math.sin(Date.now() / 150) * 0.3 + 0.5;
-        ctx.fillStyle = `rgba(255,0,0,${Math.floor(pulse * 40) / 100})`;
+        const pulse = Math.sin(this.checkPulseTime * 6) * 0.3 + 0.5;
+        const ch = cols.checkHighlight || '#ff4444';
+        const cr = parseInt(ch.slice(1, 3), 16);
+        const cg = parseInt(ch.slice(3, 5), 16);
+        const cb = parseInt(ch.slice(5, 7), 16);
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},${Math.floor(pulse * 40) / 100})`;
         ctx.fillRect(sx + 1, sy + 1, squareSize - 2, squareSize - 2);
-        ctx.strokeStyle = `rgba(255,0,0,${Math.floor(pulse * 100) / 100})`;
+        ctx.strokeStyle = `rgba(${cr},${cg},${cb},${Math.floor(pulse * 100) / 100})`;
         ctx.lineWidth = 2;
         ctx.strokeRect(sx + 1, sy + 1, squareSize - 2, squareSize - 2);
       }
@@ -222,7 +238,7 @@ class BoardRenderer {
     // Animations
     this.animations = this.animations.filter(a => {
       if (!a.running) return false;
-      a.progress += 0.04 * (store.get('settings').animationSpeed || 1);
+      a.progress += dt * 2.5 * (store.get('settings').animationSpeed || 1);
       if (a.progress >= 1) {
         a.running = false;
         if (a.onComplete) a.onComplete();
@@ -237,7 +253,7 @@ class BoardRenderer {
       const y = Math.floor(fromY + (toY - fromY) * p - Math.sin(p * Math.PI) * squareSize * 0.1);
       const padding = Math.max(2, Math.floor(squareSize * 0.06));
       ctx.save();
-      ctx.globalAlpha = 1 - a.progress * 0.15;
+      ctx.globalAlpha = 1;
       PieceRenderer.drawPiece(ctx, a.type, a.color, theme, x + padding, y + padding, squareSize - padding * 2);
       ctx.restore();
       return true;

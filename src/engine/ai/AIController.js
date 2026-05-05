@@ -20,4 +20,23 @@ class AIController {
     }
     return Search.findBestMove(board, color, config.depth);
   }
+
+  static async getMoveAsync(board, color, level, legalMoves) {
+    // Try cloud eval first for levels 3+
+    if (level >= 3) {
+      try {
+        const fen = FEN.fromBoard(board, color);
+        const uciMove = await CloudEval.getBestMove(fen, level);
+        if (uciMove) {
+          const move = CloudEval.findMatchingMove(uciMove, legalMoves);
+          if (move) return move;
+        }
+      } catch (e) {
+        // Cloud eval failed, fall through to local
+      }
+    }
+
+    // Fallback to local engine
+    return this.getMove(board, color, level);
+  }
 }

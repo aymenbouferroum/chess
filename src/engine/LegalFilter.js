@@ -7,6 +7,7 @@ class LegalFilter {
       const sim = board.clone();
       MoveExecutor.executeMoveRaw(sim, move);
       const king = sim.findKing(color);
+      if (!king) return false;
       return !MoveGen.isSquareAttacked(sim, king.row, king.col, color === 'white' ? 'black' : 'white');
     });
   }

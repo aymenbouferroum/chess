@@ -24,6 +24,8 @@ class MiniGameManager {
       { type: RhythmTap, weight: 1 },
       { type: NumberGuess, weight: 1 },
       { type: CoinFlip, weight: 1 },
+      { type: ShieldBlock, weight: 1 },
+      { type: WhackMole, weight: 1 },
     ];
 
     this.overlayCtx = null;
@@ -58,6 +60,22 @@ class MiniGameManager {
     return Math.random() < 0.30;
   }
 
+  static isMinigameAllowed(gameType) {
+    const mode = store.get('mode');
+    if (mode !== 'custom') return true;
+    const customMg = store.get('customMinigames');
+    if (!customMg) return true;
+    const gameKeyMap = {
+      QuickClick: 'quickClick', MemoryMatch: 'memoryMatch', TimingStrike: 'timingStrike',
+      PatternPress: 'patternPress', ReactionTest: 'reactionTest', UndertaleDodge: 'undertaleDodge',
+      PowerMeter: 'powerMeter', TargetPractice: 'targetPractice', DodgeFalling: 'dodgeFalling',
+      RhythmTap: 'rhythmTap', NumberGuess: 'numberGuess', CoinFlip: 'coinFlip',
+      ShieldBlock: 'shieldBlock', WhackMole: 'whackMole',
+    };
+    const key = gameKeyMap[gameType.name];
+    return key ? customMg[key] !== false : true;
+  }
+
   static isDuel(attacker, defender) {
     return attacker.type === defender.type;
   }
@@ -79,10 +97,16 @@ class MiniGameManager {
     this.botTimer = 0;
     this.nextBotAction = 0.3 + Math.random() * 0.3;
 
-    const totalWeight = this.allGames.reduce((s, g) => s + g.weight, 0);
+    const allowedGames = this.allGames.filter(g => MiniGameManager.isMinigameAllowed(g.type));
+    if (allowedGames.length === 0) {
+      if (callback) callback('attacker');
+      return;
+    }
+
+    const totalWeight = allowedGames.reduce((s, g) => s + g.weight, 0);
     let r = Math.random() * totalWeight;
-    let selected = this.allGames[0];
-    for (const g of this.allGames) {
+    let selected = allowedGames[0];
+    for (const g of allowedGames) {
       r -= g.weight;
       if (r <= 0) { selected = g; break; }
     }
@@ -180,15 +204,19 @@ class MiniGameManager {
     ctx.save();
     ctx.globalAlpha = globalAlpha;
 
+    const theme = ThemeManager.getTheme(store.get('theme'));
+    const cols = theme.colors;
+
     // Background dim
-    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fillStyle = 'rgba(0,0,0,0.70)';
     ctx.fillRect(0, 0, 1280, 800);
 
     // Entrance animation
     const elapsed = Date.now() - this.startTime;
     const entranceProgress = Math.min(1, elapsed / 400);
-    const scale = 0.8 + entranceProgress * 0.2;
-    const alpha = entranceProgress;
+    const eased = 1 - Math.pow(1 - entranceProgress, 3);
+    const scale = 0.85 + eased * 0.15;
+    const alpha = eased;
 
     ctx.save();
     ctx.globalAlpha = alpha * globalAlpha;
@@ -196,26 +224,52 @@ class MiniGameManager {
     ctx.scale(scale, scale);
     ctx.translate(-640, -400);
 
-    // Game container
-    ctx.fillStyle = '#0a0a1a';
+    // Game container with theme colors
+    ctx.shadowColor = cols.accent;
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = cols.background + 'ee';
     ctx.fillRect(ox, oy, ow, oh);
-    ctx.strokeStyle = '#e94560';
-    ctx.lineWidth = 3;
+    ctx.shadowBlur = 0;
+
+    // Border with glow
+    ctx.strokeStyle = cols.accent;
+    ctx.lineWidth = 2;
     ctx.strokeRect(ox, oy, ow, oh);
+
+    // Inner border
+    ctx.strokeStyle = cols.text + '15';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(ox + 3, oy + 3, ow - 6, oh - 6);
+
+    // Corner accents
+    const cSize = 12;
+    ctx.strokeStyle = cols.accent;
+    ctx.lineWidth = 2;
+    // Top-left
+    ctx.beginPath(); ctx.moveTo(ox, oy + cSize); ctx.lineTo(ox, oy); ctx.lineTo(ox + cSize, oy); ctx.stroke();
+    // Top-right
+    ctx.beginPath(); ctx.moveTo(ox + ow - cSize, oy); ctx.lineTo(ox + ow, oy); ctx.lineTo(ox + ow, oy + cSize); ctx.stroke();
+    // Bottom-left
+    ctx.beginPath(); ctx.moveTo(ox, oy + oh - cSize); ctx.lineTo(ox, oy + oh); ctx.lineTo(ox + cSize, oy + oh); ctx.stroke();
+    // Bottom-right
+    ctx.beginPath(); ctx.moveTo(ox + ow - cSize, oy + oh); ctx.lineTo(ox + ow, oy + oh); ctx.lineTo(ox + ow, oy + oh - cSize); ctx.stroke();
 
     // Duel banner
     if (this.isDuel) {
-      ctx.fillStyle = '#e94560';
+      ctx.fillStyle = cols.accent;
       ctx.font = 'bold 14px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('⚔ DUEL ⚔', 640, oy + 20);
+      ctx.shadowColor = cols.accent;
+      ctx.shadowBlur = 8;
+      ctx.fillText('DUEL', 640, oy + 20);
+      ctx.shadowBlur = 0;
     }
 
     // Piece icons at top
     this._drawPieceIcon(ctx, ox + 40, oy + 30, this.attackerPiece, 'left');
     this._drawPieceIcon(ctx, ox + ow - 90, oy + 30, this.defenderPiece, 'right');
 
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = cols.text;
     ctx.font = 'bold 18px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('VS', 640, oy + 55);
@@ -230,6 +284,35 @@ class MiniGameManager {
 
     // Render the mini-game
     this.currentGame.render(ctx, this.gameX, this.gameY, this.gameW, this.gameH);
+
+    // Result banner when done
+    if (this.currentGame.done && this.doneTime) {
+      const doneElapsed = Date.now() - this.doneTime;
+      const resultAlpha = Math.min(1, doneElapsed / 300);
+      ctx.globalAlpha = resultAlpha;
+
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(ox + ow * 0.15, oy + oh * 0.35, ow * 0.7, oh * 0.3);
+
+      const isWin = this.currentGame.winner === 'attacker';
+      ctx.strokeStyle = isWin ? '#44ff44' : '#ff4444';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(ox + ow * 0.15, oy + oh * 0.35, ow * 0.7, oh * 0.3);
+
+      ctx.fillStyle = isWin ? '#44ff44' : '#ff4444';
+      ctx.shadowColor = isWin ? '#44ff44' : '#ff4444';
+      ctx.shadowBlur = 12;
+      ctx.font = 'bold 28px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(isWin ? 'CAPTURED!' : 'BLOCKED!', 640, oy + oh * 0.55);
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = cols.text + 'bb';
+      ctx.font = '13px monospace';
+      ctx.fillText(isWin ? 'Piece captured successfully' : 'Square locked - move blocked', 640, oy + oh * 0.62);
+
+      ctx.globalAlpha = alpha * globalAlpha;
+    }
 
     ctx.restore();
     ctx.restore();

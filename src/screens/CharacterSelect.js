@@ -75,7 +75,7 @@ const CharacterSelect = {
         ctx.drawImage(sprite, sx, sy, spriteSize, spriteSize);
       } else {
         // Locked silhouette
-        ctx.fillStyle = '#222';
+        ctx.fillStyle = cols.panel;
         ctx.fillRect(sx + 10, sy + 10, spriteSize - 20, spriteSize - 20);
         ctx.fillStyle = cols.text + '44';
         ctx.font = '24px monospace';
@@ -132,7 +132,7 @@ const CharacterSelect = {
 
       // Beat indicator
       if (ch.level < store.get('storyLevel')) {
-        ctx.fillStyle = '#44ff44';
+        ctx.fillStyle = cols.accent;
         ctx.font = '12px monospace';
         ctx.fillText('DEFEATED', x + cardW / 2, y + cardH - 30);
       }
@@ -172,7 +172,7 @@ const CharacterSelect = {
       UIHelpers.drawButton(ctx, 540, 490, 200, 50, 'FIGHT!', cols, {
         active: true,
         fill: this.selectedChar.colors.primary,
-        textColor: '#fff',
+        textColor: cols.text,
         font: 'bold 18px monospace',
       });
 

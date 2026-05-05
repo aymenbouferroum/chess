@@ -30,6 +30,13 @@ class MoveExecutor {
 
     this.executeMoveRaw(board, move);
 
+    // Half-move clock for 50-move rule
+    if (piece.type === 'pawn' || captured) {
+      board.halfMoveClock = 0;
+    } else {
+      board.halfMoveClock++;
+    }
+
     if (move.promotion && piece.type === 'pawn') {
       board.grid[move.to.row][move.to.col] = { type: move.promotion, color };
     }
@@ -61,7 +68,7 @@ class MoveExecutor {
     board.positionHistory.push(board.posKey());
 
     const enemyKing = board.findKing(board.turn);
-    board.inCheck = MoveGen.isSquareAttacked(board, enemyKing.row, enemyKing.col, color);
+    board.inCheck = enemyKing ? MoveGen.isSquareAttacked(board, enemyKing.row, enemyKing.col, color) : false;
 
     return { captured, piece, move };
   }

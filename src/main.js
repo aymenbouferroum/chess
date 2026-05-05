@@ -60,7 +60,7 @@ function gameLoop(timestamp) {
 
   // Render pause menu on top of game screen
   if (PauseMenu.visible) {
-    PauseMenu.render(ctx);
+    PauseMenu.render(ctx, dt);
   }
 
   // Screen transition fade
@@ -99,6 +99,8 @@ function initApp() {
   registerScreen('settings', SettingsScreen);
   registerScreen('miniGamePractice', MiniGamePractice);
   registerScreen('howToPlay', HowToPlay);
+  registerScreen('botSelect', BotSelect);
+  registerScreen('customGame', CustomGameScreen);
   registerScreen('stats', StatsScreen);
 
   function getMousePos(e, el) {
@@ -142,7 +144,9 @@ function initApp() {
     const scaleY = 800 / rect.height;
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
-    if (currentScreen && currentScreen.handleMouseMove) {
+    if (PauseMenu.visible && PauseMenu.handleMouseMove) {
+      PauseMenu.handleMouseMove(x, y);
+    } else if (currentScreen && currentScreen.handleMouseMove) {
       currentScreen.handleMouseMove(x, y);
     }
   });
@@ -153,6 +157,11 @@ function initApp() {
       if (window.electron && window.electron.toggleFullscreen) {
         window.electron.toggleFullscreen();
       }
+      return;
+    }
+    if (e.key === 'F12') {
+      e.preventDefault();
+      ScreenshotCapture.captureAll();
       return;
     }
     if (store.get('miniGameActive')) {

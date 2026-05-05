@@ -38,7 +38,7 @@ class Board {
     b.grid = this.grid.map(row => row.map(cell => cell ? { ...cell } : null));
     b.turn = this.turn;
     b.castlingRights = JSON.parse(JSON.stringify(this.castlingRights));
-    b.enPassantTarget = this.enPassantTarget;
+    b.enPassantTarget = this.enPassantTarget ? { ...this.enPassantTarget } : null;
     b.halfMoveClock = this.halfMoveClock;
     b.fullMoveNumber = this.fullMoveNumber;
     b.inCheck = this.inCheck;

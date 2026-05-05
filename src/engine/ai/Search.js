@@ -3,17 +3,32 @@ class Search {
   static maxNodes = 10000;
   static abortSearch = false;
   static startTime = 0;
-  static maxTime = 200; // ms
+  static maxTime = 200;
+  static maxDepth = 3;
+
+  static SEARCH_LIMITS = {
+    1: { maxNodes: 5000, maxTime: 500 },
+    2: { maxNodes: 8000, maxTime: 800 },
+    3: { maxNodes: 20000, maxTime: 1500 },
+    4: { maxNodes: 50000, maxTime: 2500 },
+    5: { maxNodes: 100000, maxTime: 4000 },
+  };
+
+  static applyLimits(depth) {
+    const limits = this.SEARCH_LIMITS[depth] || this.SEARCH_LIMITS[5];
+    this.maxNodes = limits.maxNodes;
+    this.maxTime = limits.maxTime;
+  }
 
   static search(board, depth, color, alpha, beta, isMaximizing, precomputedMoves = null) {
     this.nodesSearched++;
-    if (this.nodesSearched > this.maxNodes || (this.nodesSearched & 255) === 0 && Date.now() - this.startTime > this.maxTime) {
+    if (this.abortSearch || this.nodesSearched > this.maxNodes || (this.nodesSearched & 255) === 0 && Date.now() - this.startTime > this.maxTime) {
       this.abortSearch = true;
       return { score: Evaluate.evaluate(board, color) };
     }
 
     if (depth === 0) {
-      return { score: Evaluate.evaluate(board, color) };
+      return { score: this.quiescence(board, color, alpha, beta, isMaximizing, 0) };
     }
 
     const moves = precomputedMoves || GameRules.getLegalMoves(board, isMaximizing ? color : (color === 'white' ? 'black' : 'white'));
@@ -53,8 +68,63 @@ class Search {
     return { score: bestScore, move: bestMove };
   }
 
+  static quiescence(board, color, alpha, beta, isMaximizing, qDepth) {
+    if (qDepth > 4 || this.abortSearch || this.nodesSearched > this.maxNodes) {
+      return Evaluate.evaluate(board, color);
+    }
+
+    this.nodesSearched++;
+    if ((this.nodesSearched & 255) === 0 && Date.now() - this.startTime > this.maxTime) {
+      this.abortSearch = true;
+      return Evaluate.evaluate(board, color);
+    }
+
+    const standPat = Evaluate.evaluate(board, color);
+
+    if (isMaximizing) {
+      if (standPat >= beta) return beta;
+      if (standPat > alpha) alpha = standPat;
+    } else {
+      if (standPat <= alpha) return alpha;
+      if (standPat < beta) beta = standPat;
+    }
+
+    const moveColor = isMaximizing ? color : (color === 'white' ? 'black' : 'white');
+    const allMoves = MoveGen.generateMoves(board, moveColor);
+    const captures = allMoves.filter(m => m.captured);
+
+    captures.sort((a, b) => {
+      const aVal = Evaluate.PIECE_VALUES[a.captured.type] - (Evaluate.PIECE_VALUES[board.grid[a.from.row]?.[a.from.col]?.type] || 0) * 0.1;
+      const bVal = Evaluate.PIECE_VALUES[b.captured.type] - (Evaluate.PIECE_VALUES[board.grid[b.from.row]?.[b.from.col]?.type] || 0) * 0.1;
+      return bVal - aVal;
+    });
+
+    for (const move of captures) {
+      const delta = Evaluate.PIECE_VALUES[move.captured.type] - 200;
+      if (isMaximizing && standPat + delta < alpha) continue;
+      if (!isMaximizing && standPat - delta > beta) continue;
+
+      const sim = board.clone();
+      MoveExecutor.executeMoveRaw(sim, move);
+      const king = sim.findKing(moveColor);
+      if (!king) continue;
+      if (MoveGen.isSquareAttacked(sim, king.row, king.col, moveColor === 'white' ? 'black' : 'white')) continue;
+
+      const score = this.quiescence(sim, color, alpha, beta, !isMaximizing, qDepth + 1);
+
+      if (isMaximizing) {
+        if (score >= beta) return beta;
+        if (score > alpha) alpha = score;
+      } else {
+        if (score <= alpha) return alpha;
+        if (score < beta) beta = score;
+      }
+    }
+
+    return isMaximizing ? alpha : beta;
+  }
+
   static evaluateMove(board, color, move, depth) {
-    // Quick 1-ply evaluation for move sorting and noise selection
     const sim = board.clone();
     MoveExecutor.executeMove(sim, move, color);
     if (depth <= 1) {
@@ -69,12 +139,12 @@ class Search {
     this.abortSearch = false;
     this.startTime = Date.now();
     this.maxDepth = depth;
+    this.applyLimits(depth);
     const moves = GameRules.getLegalMoves(board, color);
 
     if (moves.length === 0) return null;
     if (moves.length === 1) return moves[0];
 
-    // Sort moves by shallow evaluation for better alpha-beta pruning
     if (moves.length > 1 && depth > 1) {
       const scored = moves.map(move => {
         const score = this.evaluateMove(board, color, move, 1);
@@ -94,36 +164,30 @@ class Search {
     this.nodesSearched = 0;
     this.abortSearch = false;
     this.startTime = Date.now();
+    this.applyLimits(depth);
     const moves = GameRules.getLegalMoves(board, color);
     if (moves.length === 0) return null;
     if (moves.length === 1) return moves[0];
 
-    // Evaluate all moves at depth 1 (fast) for sorting
     const scored = moves.map(move => {
       const score = this.evaluateMove(board, color, move, 1);
       return { move, score };
     });
 
-    // Sort best to worst for the current player
     scored.sort((a, b) => b.score - a.score);
 
-    // Pure random for very high noise (level 1-2)
     if (noiseLevel >= 0.6) {
       if (Math.random() < noiseLevel) {
-        // Pick from the bottom half of moves
         const badMoves = scored.slice(Math.floor(scored.length * 0.4));
         return badMoves[Math.floor(Math.random() * badMoves.length)].move;
       }
     }
 
-    // Medium noise: weighted random toward worse moves
     if (noiseLevel > 0) {
       if (Math.random() < noiseLevel) {
-        // Create a weighted pool favoring worse moves
         const totalWeight = scored.length * (scored.length + 1) / 2;
         let r = Math.random() * totalWeight;
         for (let i = 0; i < scored.length; i++) {
-          // Lower index = better move, higher weight for worse moves
           const weight = i + 1;
           r -= weight;
           if (r <= 0) {
@@ -134,7 +198,6 @@ class Search {
       }
     }
 
-    // No noise or noise didn't trigger: use full-depth search for best move
     if (depth <= 1) {
       return scored[0].move;
     }
