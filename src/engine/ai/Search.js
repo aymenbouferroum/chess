@@ -1,11 +1,13 @@
 class Search {
   static nodesSearched = 0;
-  static maxNodes = 20000;
+  static maxNodes = 10000;
   static abortSearch = false;
+  static startTime = 0;
+  static maxTime = 200; // ms
 
   static search(board, depth, color, alpha, beta, isMaximizing, precomputedMoves = null) {
     this.nodesSearched++;
-    if (this.nodesSearched > this.maxNodes) {
+    if (this.nodesSearched > this.maxNodes || (this.nodesSearched & 255) === 0 && Date.now() - this.startTime > this.maxTime) {
       this.abortSearch = true;
       return { score: Evaluate.evaluate(board, color) };
     }
@@ -65,6 +67,7 @@ class Search {
   static findBestMove(board, color, depth) {
     this.nodesSearched = 0;
     this.abortSearch = false;
+    this.startTime = Date.now();
     this.maxDepth = depth;
     const moves = GameRules.getLegalMoves(board, color);
 
@@ -88,6 +91,9 @@ class Search {
   }
 
   static findBestMoveWithNoise(board, color, depth, noiseLevel) {
+    this.nodesSearched = 0;
+    this.abortSearch = false;
+    this.startTime = Date.now();
     const moves = GameRules.getLegalMoves(board, color);
     if (moves.length === 0) return null;
     if (moves.length === 1) return moves[0];

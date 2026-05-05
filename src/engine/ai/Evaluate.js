@@ -59,9 +59,30 @@ class Evaluate {
       }
     }
 
-    const ourMoves = GameRules.getLegalMoves(board, color).length;
-    const theirMoves = GameRules.getLegalMoves(board, enemy).length;
-    score += (ourMoves - theirMoves) * 2;
+    // Mobility: count pieces that can move (cheap proxy, avoids expensive getLegalMoves)
+    let ourMobile = 0;
+    let theirMobile = 0;
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = board.grid[r][c];
+        if (!p) continue;
+        if (p.type === 'pawn') {
+          const dir = p.color === 'white' ? -1 : 1;
+          const nr = r + dir;
+          if (nr >= 0 && nr < 8 && !board.grid[nr][c]) (p.color === color ? ourMobile : theirMobile)++;
+          const caps = [c - 1, c + 1];
+          for (const cc of caps) {
+            if (cc >= 0 && cc < 8 && nr >= 0 && nr < 8) {
+              const t = board.grid[nr][cc];
+              if (t && t.color !== p.color) (p.color === color ? ourMobile : theirMobile)++;
+            }
+          }
+        } else if (p.type !== 'king') {
+          (p.color === color ? ourMobile : theirMobile)++;
+        }
+      }
+    }
+    score += (ourMobile - theirMobile);
 
     return score;
   }
