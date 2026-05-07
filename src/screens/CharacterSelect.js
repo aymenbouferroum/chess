@@ -25,7 +25,10 @@ const CharacterSelect = {
     const theme = ThemeManager.getTheme(store.get('theme'));
     const cols = theme.colors;
 
-    if (typeof backgroundRenderer !== 'undefined') {
+    const usePixiBg = typeof PixiMenuBackground !== 'undefined' && PixiMenuBackground.initialized;
+    if (usePixiBg) {
+      ctx.clearRect(0, 0, 1280, 800);
+    } else if (typeof backgroundRenderer !== 'undefined') {
       backgroundRenderer.render(ctx, dt);
     } else {
       ctx.fillStyle = cols.background;

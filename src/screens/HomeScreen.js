@@ -6,19 +6,6 @@ const HomeScreen = {
 
   init() {
     this.stars = [];
-    for (let i = 0; i < 100; i++) {
-      this.stars.push({
-        x: Math.random() * 1280,
-        y: Math.random() * 800,
-        size: Math.random() * 2 + 1,
-        speed: Math.random() * 0.5 + 0.1,
-        twinkle: Math.random() * Math.PI * 2,
-      });
-    }
-
-    const theme = ThemeManager.getTheme(store.get('theme'));
-    this.colors = theme.colors;
-
     this.buttons = [
       { text: 'Story Mode', sub: 'Battle unique characters', action: 'story', group: 'main' },
       { text: 'Local 1v1', sub: 'Play with a friend', action: '1v1', group: 'main' },
@@ -79,21 +66,14 @@ const HomeScreen = {
     this.titlePulse += dt * 2;
 
     // Background
-    if (typeof backgroundRenderer !== 'undefined') {
+    const usePixiBg = typeof PixiMenuBackground !== 'undefined' && PixiMenuBackground.initialized;
+    if (usePixiBg) {
+      ctx.clearRect(0, 0, 1280, 800);
+    } else if (typeof backgroundRenderer !== 'undefined') {
       backgroundRenderer.render(ctx, dt);
     } else {
       ctx.fillStyle = cols.background;
       ctx.fillRect(0, 0, 1280, 800);
-    }
-
-    // Animated stars/particles
-    for (const star of this.stars) {
-      star.y += star.speed;
-      star.twinkle += dt * 2;
-      if (star.y > 800) { star.y = -5; star.x = Math.random() * 1280; }
-      const alpha = Math.sin(star.twinkle) * 0.3 + 0.7;
-      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-      ctx.fillRect(star.x, star.y, star.size, star.size);
     }
 
     // Decorative lines

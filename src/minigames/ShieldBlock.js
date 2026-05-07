@@ -151,6 +151,14 @@ class ShieldBlock {
           this.flashTimer = 0.1;
           this.flashColor = '#44ff44';
           audioManager.playSelect();
+          if (typeof PixiMiniGameFX !== 'undefined' && this._bounds) {
+            const cx = this._bounds.x + this._bounds.w / 2;
+            const cy = this._bounds.y + this._bounds.h * 0.88;
+            PixiMiniGameFX.spawnSparks(cx, cy, '#ffdd44', 8);
+            if (this.comboCount > 1) {
+              PixiMiniGameFX.spawnCombo(cx, cy - 20, this.comboCount);
+            }
+          }
           continue;
         }
       }
@@ -164,6 +172,12 @@ class ShieldBlock {
         this.comboCount = 0;
         audioManager.playCapture();
         audioManager.playScreenShake();
+        if (typeof PixiMiniGameFX !== 'undefined' && this._bounds) {
+          const cx = this._bounds.x + this._bounds.w / 2;
+          const cy = this._bounds.y + this._bounds.h / 2;
+          PixiMiniGameFX.spawnHitFlash(this._bounds.x, this._bounds.y, this._bounds.w, this._bounds.h);
+          PixiMiniGameFX.shakeScreen(6);
+        }
         if (this.hp <= 0) {
           this.hp = 0;
           this.done = true;
@@ -190,6 +204,7 @@ class ShieldBlock {
   }
 
   render(ctx, x, y, w, h) {
+    this._bounds = { x, y, w, h };
     const theme = ThemeManager.getTheme(store.get('theme'));
     const cols = theme.colors;
 

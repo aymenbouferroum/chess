@@ -29,10 +29,22 @@ function _doSwitchScreen() {
     currentScreen.destroy();
   }
   miniCanvas.classList.remove('active');
+
+  // Cleanup menu background when leaving menu screens
+  const isMenuScreen = transition.nextScreen !== 'game';
+  if (!isMenuScreen && typeof PixiMenuBackground !== 'undefined') {
+    PixiMenuBackground.destroy();
+  }
+
   store.set('screen', transition.nextScreen);
   currentScreen = screens[transition.nextScreen];
   if (currentScreen && currentScreen.init) {
     currentScreen.init(transition.nextData);
+  }
+
+  // Initialize menu background for non-game screens
+  if (isMenuScreen && typeof PixiMenuBackground !== 'undefined') {
+    PixiMenuBackground.init();
   }
 }
 

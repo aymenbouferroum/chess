@@ -131,6 +131,16 @@ class QuickClick {
         color: Math.random() > 0.5 ? '#44ff44' : '#88ffaa',
       });
     }
+
+    // PixiFX enhancements
+    if (typeof PixiMiniGameFX !== 'undefined') {
+      const fxX = this._bounds ? this._bounds.x + this._bounds.w / 2 : cx;
+      const fxY = this._bounds ? this._bounds.y + this._bounds.h / 2 : cy;
+      PixiMiniGameFX.spawnSparks(fxX, fxY, '#44ff44', 6);
+      if (this.comboCount >= 2) {
+        PixiMiniGameFX.spawnCombo(fxX, fxY - 30, this.comboCount);
+      }
+    }
   }
 
   botPlay(dt, timer) {
@@ -152,6 +162,7 @@ class QuickClick {
   }
 
   render(ctx, x, y, w, h) {
+    this._bounds = { x, y, w, h };
     const theme = ThemeManager.getTheme(store.get('theme'));
     const cols = theme.colors;
 

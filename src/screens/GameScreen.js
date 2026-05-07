@@ -1,8 +1,5 @@
 const GameScreen = {
   board: null,
-  boardRenderer: null,
-  animator: null,
-  particleFX: null,
   selectedSquare: null,
   legalMoves: [],
   turn: 'white',
@@ -32,9 +29,6 @@ const GameScreen = {
 
   init(data) {
     this.board = new Board();
-    this.boardRenderer = new BoardRenderer();
-    this.animator = new Animator(this.boardRenderer);
-    this.particleFX = new ParticleFX(this.boardRenderer);
     this.selectedSquare = null;
     this.legalMoves = [];
     this.turn = 'white';
@@ -98,7 +92,6 @@ const GameScreen = {
   },
 
   destroy() {
-    this.boardRenderer.clearAnimations();
     audioManager.stopMusic();
     if (typeof PixiGameScreen !== 'undefined') {
       PixiGameScreen.destroy();
@@ -265,7 +258,7 @@ const GameScreen = {
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
       ctx.fillRect(0, 0, 1280, 800);
 
-      const sqSize = this.boardRenderer.squareSize;
+      const sqSize = 80;
       const types = ['queen', 'rook', 'bishop', 'knight'];
       const totalW = types.length * sqSize + (types.length - 1) * 10;
       const startX = 640 - totalW / 2;
@@ -456,7 +449,7 @@ const GameScreen = {
   handleClick(x, y) {
     // Promotion dialog
     if (this.promotionPending) {
-      const sqSize = this.boardRenderer.squareSize;
+      const sqSize = 80;
       const types = ['queen', 'rook', 'bishop', 'knight'];
       const totalW = types.length * sqSize + (types.length - 1) * 10;
       const startX = 640 - totalW / 2;
@@ -526,8 +519,6 @@ const GameScreen = {
     let boardPos = null;
     if (typeof PixiGameScreen !== 'undefined' && PixiGameScreen.initialized) {
       boardPos = PixiGameScreen.getSquareAt(x, y);
-    } else if (typeof boardRenderer !== 'undefined') {
-      boardPos = boardRenderer.screenToBoard(x, y);
     }
     if (!boardPos) return;
     const row = boardPos.row;
@@ -580,7 +571,7 @@ const GameScreen = {
     const canvas = document.getElementById('gameCanvas');
 
     if (this.promotionPending) {
-      const sqSize = this.boardRenderer.squareSize;
+      const sqSize = 80;
       const types = ['queen', 'rook', 'bishop', 'knight'];
       const totalW = types.length * sqSize + (types.length - 1) * 10;
       const startX = 640 - totalW / 2;
@@ -598,8 +589,7 @@ const GameScreen = {
       return;
     }
 
-    const boardPos = this.boardRenderer.screenToBoard(x, y);
-    this.hoveredSquare = boardPos;
+    this.hoveredSquare = null;
 
     if (this.gameOver) {
       this.hoveredGameOverBtn = null;
@@ -703,10 +693,6 @@ const GameScreen = {
         PixiGameScreen.spawnCaptureParticles(cx, cy, parseInt(theme.colors.accent.replace('#', '0x'), 16));
         PixiGameScreen.shakeScreen(8);
         PixiGameScreen.flashScreen(0xffffff);
-      } else {
-        this.particleFX.captureEffect(cx, cy, theme);
-        this.boardRenderer.triggerScreenShake(8);
-        this.boardRenderer.triggerCaptureFlash(move.to.row, move.to.col);
       }
 
       audioManager.playCapture();
@@ -722,8 +708,6 @@ const GameScreen = {
 
       if (typeof PixiGameScreen !== 'undefined' && PixiGameScreen.initialized) {
         PixiGameScreen.spawnMoveParticles(cx, cy, parseInt(theme.colors.accent.replace('#', '0x'), 16));
-      } else {
-        this.particleFX.moveEffect(cx, cy, theme);
       }
     }
 

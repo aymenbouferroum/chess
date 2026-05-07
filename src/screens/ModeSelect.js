@@ -14,7 +14,10 @@ const ModeSelect = {
     const cols = theme.colors;
 
     // Background - animated theme
-    if (typeof backgroundRenderer !== 'undefined') {
+    const usePixiBg = typeof PixiMenuBackground !== 'undefined' && PixiMenuBackground.initialized;
+    if (usePixiBg) {
+      ctx.clearRect(0, 0, 1280, 800);
+    } else if (typeof backgroundRenderer !== 'undefined') {
       backgroundRenderer.render(ctx, dt);
     } else {
       ctx.fillStyle = cols.background;

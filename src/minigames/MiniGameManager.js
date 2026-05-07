@@ -120,6 +120,10 @@ class MiniGameManager {
     this.overlayCtx = overlay.getContext('2d');
     store.set('miniGameActive', true);
 
+    if (typeof PixiMiniGameFX !== 'undefined') {
+      PixiMiniGameFX.init();
+    }
+
     if (this.isDuel) audioManager.playDuelStart();
     else audioManager.playMiniGameStart();
 
@@ -149,6 +153,10 @@ class MiniGameManager {
     overlay.classList.add('active');
     this.overlayCtx = overlay.getContext('2d');
     store.set('miniGameActive', true);
+
+    if (typeof PixiMiniGameFX !== 'undefined') {
+      PixiMiniGameFX.init();
+    }
 
     audioManager.playMiniGameStart();
 
@@ -327,6 +335,10 @@ class MiniGameManager {
     store.set('miniGameActive', false);
     const overlay = document.getElementById('miniGameOverlay');
     overlay.classList.remove('active');
+
+    if (typeof PixiMiniGameFX !== 'undefined') {
+      PixiMiniGameFX.destroy();
+    }
 
     if (this.animFrame) {
       cancelAnimationFrame(this.animFrame);
