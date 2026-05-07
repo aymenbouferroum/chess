@@ -6,7 +6,7 @@ const PixiApp = {
   init() {
     if (this.initialized) return;
 
-    const canvas = document.getElementById('gameCanvas');
+    const canvas = document.getElementById('pixiCanvas');
 
     this.app = new PIXI.Application({
       view: canvas,

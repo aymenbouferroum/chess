@@ -43,6 +43,11 @@ function resizeCanvas() {
   canvas.height = h;
   miniCanvas.width = w;
   miniCanvas.height = h;
+  const pixiCanvas = document.getElementById('pixiCanvas');
+  if (pixiCanvas) {
+    pixiCanvas.width = w;
+    pixiCanvas.height = h;
+  }
 }
 
 function gameLoop(timestamp) {
