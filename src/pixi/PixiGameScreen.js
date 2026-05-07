@@ -81,12 +81,16 @@ const PixiGameScreen = {
     });
   },
 
-  spawnCaptureParticles(x, y, color) {
-    PixiParticleFX.spawnCapture(x, y, color);
+  spawnCaptureParticles(x, y, color, pieceType) {
+    PixiParticleFX.spawnCaptureExplosion(x, y, color, pieceType || 'pawn');
   },
 
   spawnMoveParticles(x, y, color) {
     PixiParticleFX.spawnMove(x, y, color);
+  },
+
+  spawnFireworks(x, y, colors) {
+    PixiParticleFX.spawnFireworks(x, y, colors);
   },
 
   flashScreen(color) {

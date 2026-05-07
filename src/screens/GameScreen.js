@@ -690,9 +690,10 @@ const GameScreen = {
       const cy = offsetY + move.to.row * sqSize + sqSize / 2;
 
       if (typeof PixiGameScreen !== 'undefined' && PixiGameScreen.initialized) {
-        PixiGameScreen.spawnCaptureParticles(cx, cy, parseInt(theme.colors.accent.replace('#', '0x'), 16));
-        PixiGameScreen.shakeScreen(8);
-        PixiGameScreen.flashScreen(0xffffff);
+        const isMajor = captured && (captured.type === 'rook' || captured.type === 'queen');
+        PixiGameScreen.spawnCaptureParticles(cx, cy, parseInt(theme.colors.accent.replace('#', '0x'), 16), captured.type);
+        PixiGameScreen.shakeScreen(isMajor ? 14 : 8);
+        PixiGameScreen.flashScreen(isMajor ? 0xffeeaa : 0xffffff);
       }
 
       audioManager.playCapture();
@@ -771,7 +772,15 @@ const GameScreen = {
       this.gameOver = true;
       this.gameResult = status.winner || 'draw';
       this.handleGameEnd();
-      if (this.gameResult !== 'draw') audioManager.playVictory();
+      if (this.gameResult !== 'draw') {
+        audioManager.playVictory();
+        if (typeof PixiGameScreen !== 'undefined' && PixiGameScreen.initialized) {
+          const colors = this.gameResult === 'white'
+            ? [0xffd700, 0xff4444, 0xffffff, 0xffaa00]
+            : [0x8844ff, 0x4444ff, 0x44aaff, 0xaa44ff];
+          PixiGameScreen.spawnFireworks(640, 400, colors);
+        }
+      }
       else audioManager.playGameOver();
     } else if (status.status === 'draw') {
       this.gameOver = true;
