@@ -40,58 +40,52 @@ const CharacterSelect = {
 
   buildSlots() {
     const saves = store.get('storySaves');
-    const startX = 112;
-    const y = 174;
-    const w = 320;
-    const h = 388;
-    const gap = 48;
+    const startX = 92;
+    const y = 156;
+    const w = 344;
+    const h = 446;
+    const gap = 30;
     saves.forEach((save, index) => {
       const isEmpty = !save.difficultyTier;
       PixiPremiumScene.card(this.pixiContainer, startX + index * (w + gap), y, w, h, {
         active: store.get('activeSaveSlot') === index + 1,
         activeColor: isEmpty ? ThemeManager.getCurrentColors().accent : (save.completed ? '#7dea99' : ThemeManager.getCurrentColors().accent),
+        alpha: 0.86,
         onClick: () => this.chooseSlot(index),
-        draw: (card) => {
+        draw: (card, state) => {
           const cols = ThemeManager.getCurrentColors();
+          this.drawSaveSlotArt(card, save, index, w, h, isEmpty, state && state.hover, cols);
+
           const title = PixiPremiumScene.text(`SAVE ${index + 1}`, {
             fontFamily: PixiTextStyles.FONT_TITLE,
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: 'bold',
-            fill: cols.accent,
+            fill: isEmpty ? cols.accent : '#7dea99',
+            stroke: { color: 0x05020d, width: 3 },
+            padding: 5,
           });
           title.anchor.set(0.5);
           title.x = w / 2;
-          title.y = 44;
+          title.y = 36;
           card.addChild(title);
 
-          const sigil = new PIXI.Graphics();
-          sigil.roundRect(w / 2 - 52, 86, 104, 104, 14)
-            .fill({ color: 0x071724, alpha: 0.72 })
-            .roundRect(w / 2 - 52, 86, 104, 104, 14)
-            .stroke({ color: PixiPremiumScene.color(isEmpty ? cols.accent : '#7dea99'), alpha: 0.78, width: 3 });
           if (isEmpty) {
-            sigil.rect(w / 2 - 8, 112, 16, 52).fill({ color: PixiPremiumScene.color(cols.accent), alpha: 0.92 });
-            sigil.rect(w / 2 - 26, 130, 52, 16).fill({ color: PixiPremiumScene.color(cols.accent), alpha: 0.92 });
-          } else {
-            const progress = Math.min(1, (save.storyLevel || 1) / 10);
-            sigil.circle(w / 2, 138, 34).stroke({ color: PixiPremiumScene.color(cols.text), alpha: 0.34, width: 8 });
-            sigil.arc(w / 2, 138, 34, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress)
-              .stroke({ color: PixiPremiumScene.color(cols.accent), alpha: 0.95, width: 8 });
-            sigil.rect(w / 2 - 9, 127, 18, 22).fill({ color: PixiPremiumScene.color(cols.text), alpha: 0.9 });
-          }
-          card.addChild(sigil);
-
-          if (isEmpty) {
-            const newGame = PixiPremiumScene.text('New Game', { fontSize: 28, fontWeight: '800', fill: cols.text });
+            const newGame = PixiPremiumScene.text('New Campaign', {
+              fontSize: 26,
+              fontWeight: '900',
+              fill: cols.text,
+              stroke: { color: 0x05020d, width: 3 },
+              padding: 5,
+            });
             newGame.anchor.set(0.5);
             newGame.x = w / 2;
-            newGame.y = 214;
+            newGame.y = 284;
             card.addChild(newGame);
 
-            const hint = PixiPremiumScene.text('Start a fresh climb', { fontSize: 17, fill: PixiPremiumScene.alpha(cols.text, '99') });
+            const hint = PixiPremiumScene.text('Begin at Level 1', { fontSize: 17, fontWeight: '700', fill: PixiPremiumScene.alpha(cols.text, 'bb') });
             hint.anchor.set(0.5);
             hint.x = w / 2;
-            hint.y = 252;
+            hint.y = 322;
             card.addChild(hint);
             return;
           }
@@ -100,21 +94,21 @@ const CharacterSelect = {
           const tierText = PixiPremiumScene.text(tier, { fontSize: 26, fontWeight: '800', fill: cols.text });
           tierText.anchor.set(0.5);
           tierText.x = w / 2;
-          tierText.y = 200;
+          tierText.y = 286;
           PixiPremiumScene.fit(tierText, w - 56);
           card.addChild(tierText);
 
           const elo = PixiPremiumScene.text(DifficultyScaler.getTierElo(save.difficultyTier), { fontSize: 16, fill: PixiPremiumScene.alpha(cols.text, '88') });
           elo.anchor.set(0.5);
           elo.x = w / 2;
-          elo.y = 232;
+          elo.y = 318;
           card.addChild(elo);
 
-          this.progress(card, 42, 286, w - 84, 16, Math.min(1, (save.storyLevel || 1) / 10), cols);
-          const level = PixiPremiumScene.text(`Level ${save.storyLevel || 1} / 10`, { fontSize: 18, fontWeight: '700', fill: cols.text });
+          this.progress(card, 42, 372, w - 84, 18, Math.min(1, (save.storyLevel || 1) / 10), cols);
+          const level = PixiPremiumScene.text(`Level ${save.storyLevel || 1} / 10`, { fontSize: 18, fontWeight: '800', fill: cols.text });
           level.anchor.set(0.5);
           level.x = w / 2;
-          level.y = 270;
+          level.y = 354;
           card.addChild(level);
 
           const status = PixiPremiumScene.text(save.completed ? 'Completed' : 'Click to continue', {
@@ -123,11 +117,137 @@ const CharacterSelect = {
           });
           status.anchor.set(0.5);
           status.x = w / 2;
-          status.y = 332;
+          status.y = 420;
           card.addChild(status);
         },
       });
     });
+  },
+
+  drawSaveSlotArt(card, save, index, w, h, isEmpty, hover, cols) {
+    const themeId = this.getAssetThemeId();
+    const bg = new PIXI.Sprite(PixiPremiumAssets.background(themeId));
+    bg.width = w - 28;
+    bg.height = 166;
+    bg.x = 14;
+    bg.y = 62;
+    bg.alpha = hover ? 0.74 : 0.58;
+    card.addChild(bg);
+
+    const shade = new PIXI.Graphics()
+      .rect(14, 62, w - 28, 166).fill({ color: 0x02040b, alpha: isEmpty ? 0.34 : 0.18 })
+      .rect(14, 210, w - 28, 18).fill({ color: 0x02040b, alpha: 0.45 })
+      .rect(24, 74, w - 48, 2).fill({ color: PixiPremiumScene.color(cols.accent), alpha: 0.38 });
+    card.addChild(shade);
+
+    if (isEmpty) {
+      this.drawEmptySlotPieces(card, w, themeId, cols);
+      this.drawSlotBadge(card, w / 2, 235, 'START', cols.accent, cols);
+      return;
+    }
+
+    const charId = typeof save.selectedCharacter === 'object' && save.selectedCharacter
+      ? save.selectedCharacter.id
+      : (save.selectedCharacter || (this.characters.find(ch => ch.level === (save.storyLevel || 1)) || this.characters[0]).id);
+    const character = this.characters.find(ch => ch.id === charId) || this.characters[0];
+    const portrait = new PIXI.Sprite(PixiPremiumAssets.character(character.id));
+    portrait.width = 140;
+    portrait.height = 140;
+    portrait.x = 34;
+    portrait.y = 92;
+    card.addChild(portrait);
+
+    const piece = this.pieceSprite(themeId, 'white', this.pieceForLevel(save.storyLevel || 1));
+    piece.width = 92;
+    piece.height = 92;
+    piece.x = w - 124;
+    piece.y = 106;
+    piece.alpha = 0.96;
+    card.addChild(piece);
+
+    this.drawSlotBadge(card, w - 74, 235, save.completed ? 'CLEAR' : `LV ${save.storyLevel || 1}`, save.completed ? '#7dea99' : cols.accent, cols);
+
+    const name = PixiPremiumScene.text(character.name, {
+      fontSize: 18,
+      fontWeight: '900',
+      fill: cols.text,
+      stroke: { color: 0x05020d, width: 3 },
+      padding: 5,
+    });
+    name.x = 184;
+    name.y = 134;
+    PixiPremiumScene.fit(name, 118);
+    card.addChild(name);
+
+    const title = PixiPremiumScene.text(character.title, {
+      fontSize: 12,
+      fontWeight: '700',
+      fill: PixiPremiumScene.alpha(character.colors.primary || cols.accent, 'dd'),
+      wordWrap: true,
+      wordWrapWidth: 116,
+    });
+    title.x = 184;
+    title.y = 164;
+    PixiPremiumScene.fit(title, 116, 0.72);
+    card.addChild(title);
+  },
+
+  drawEmptySlotPieces(card, w, themeId, cols) {
+    const left = this.pieceSprite(themeId, 'white', 'king');
+    left.width = 118;
+    left.height = 118;
+    left.x = 76;
+    left.y = 100;
+    card.addChild(left);
+
+    const right = this.pieceSprite(themeId, 'white', 'queen');
+    right.width = 104;
+    right.height = 104;
+    right.x = 170;
+    right.y = 110;
+    right.alpha = 0.78;
+    right.tint = PixiPremiumScene.color(cols.accent);
+    card.addChild(right);
+
+    const plus = new PIXI.Graphics()
+      .roundRect(w / 2 - 36, 127, 72, 72, 10).fill({ color: 0x071724, alpha: 0.78 })
+      .roundRect(w / 2 - 36, 127, 72, 72, 10).stroke({ color: PixiPremiumScene.color(cols.accent), alpha: 0.7, width: 2 })
+      .rect(w / 2 - 5, 143, 10, 40).fill({ color: PixiPremiumScene.color(cols.accent), alpha: 0.95 })
+      .rect(w / 2 - 20, 158, 40, 10).fill({ color: PixiPremiumScene.color(cols.accent), alpha: 0.95 });
+    card.addChild(plus);
+  },
+
+  drawSlotBadge(card, x, y, label, color, cols) {
+    const badge = new PIXI.Graphics()
+      .roundRect(x - 44, y - 16, 88, 32, 6).fill({ color: 0x071724, alpha: 0.82 })
+      .roundRect(x - 44, y - 16, 88, 32, 6).stroke({ color: PixiPremiumScene.color(color), alpha: 0.72, width: 2 });
+    card.addChild(badge);
+    const text = PixiPremiumScene.text(label, {
+      fontSize: 13,
+      fontWeight: '900',
+      fill: color,
+    });
+    text.anchor.set(0.5);
+    text.x = x;
+    text.y = y - 1;
+    PixiPremiumScene.fit(text, 72, 0.68);
+    card.addChild(text);
+  },
+
+  pieceSprite(themeId, color, type) {
+    const sprite = new PIXI.Sprite(PIXI.Texture.from(`../assets/textures/pieces/${themeId}_${color}_${type}.png`));
+    if (sprite.texture && sprite.texture.source) sprite.texture.source.scaleMode = 'nearest';
+    return sprite;
+  },
+
+  pieceForLevel(level) {
+    const pieces = ['pawn', 'bishop', 'rook', 'knight', 'queen', 'rook', 'bishop', 'knight', 'queen', 'king'];
+    return pieces[Math.max(0, Math.min(pieces.length - 1, level - 1))];
+  },
+
+  getAssetThemeId() {
+    const themeId = store.get('theme') || 'space';
+    return themeId === 'custom' ? (store.get('customBgTheme') || 'space') : themeId;
   },
 
   buildDifficulty() {
