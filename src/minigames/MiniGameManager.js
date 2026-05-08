@@ -6,7 +6,12 @@ class MiniGameManager {
     this.gameIndex = 0;
     this.attackerPiece = null;
     this.defenderPiece = null;
+    this.challengePiece = null;
+    this.threatPiece = null;
+    this.challengeResult = null;
+    this.challengeDifficulty = 1;
     this.isDuel = false;
+    this.challengePlayerIsAI = false;
     this.startTime = 0;
     this.doneTime = 0;
     this.fadeDuration = 1200;
@@ -55,8 +60,7 @@ class MiniGameManager {
   }
 
   static shouldTriggerMiniGame() {
-    if (!store.get('miniGamesEnabled')) return false;
-    return Math.random() < 0.30;
+    return !!store.get('miniGamesEnabled');
   }
 
   static isMinigameAllowed(gameType) {
@@ -79,27 +83,34 @@ class MiniGameManager {
     return attacker.type === defender.type;
   }
 
-  startMiniGame(attacker, defender, boardPos, isAIAttacking, callback) {
-    if (!store.get('miniGamesEnabled')) {
-      if (callback) callback('attacker');
-      return;
-    }
+  static getAllowedGames(allGames) {
+    return allGames.filter(g => MiniGameManager.isMinigameAllowed(g.type));
+  }
+
+  startDefensiveMiniGame(options, callback) {
+    if (!store.get('miniGamesEnabled')) return false;
+
+    const attacker = options.attacker;
+    const defender = options.defender;
+    const boardPos = options.boardPos || { row: 0, col: 0 };
+    const challengePlayerIsAI = !!options.challengePlayerIsAI;
+    const allowedGames = MiniGameManager.getAllowedGames(this.allGames);
+    if (!attacker || !defender || allowedGames.length === 0) return false;
 
     audioManager.init();
 
     const difficulty = MiniGameManager.calculateDifficulty(attacker, defender, boardPos);
+    this.challengeDifficulty = difficulty;
     this.isDuel = MiniGameManager.isDuel(attacker, defender);
-    this.isAIAttacking = isAIAttacking;
-    this.attackerPiece = attacker;
-    this.defenderPiece = defender;
+    this.isAIAttacking = false;
+    this.challengePlayerIsAI = challengePlayerIsAI;
+    this.challengePiece = defender;
+    this.threatPiece = attacker;
+    this.attackerPiece = defender;
+    this.defenderPiece = attacker;
+    this.challengeResult = null;
     this.botTimer = 0;
     this.nextBotAction = 0.3 + Math.random() * 0.3;
-
-    const allowedGames = this.allGames.filter(g => MiniGameManager.isMinigameAllowed(g.type));
-    if (allowedGames.length === 0) {
-      if (callback) callback('attacker');
-      return;
-    }
 
     const totalWeight = allowedGames.reduce((s, g) => s + g.weight, 0);
     let r = Math.random() * totalWeight;
@@ -110,7 +121,7 @@ class MiniGameManager {
     }
 
     this.currentGame = new selected.type();
-    this.currentGame.init(attacker, defender, difficulty, this.isDuel);
+    this.currentGame.init(defender, attacker, difficulty, this.isDuel);
     this.active = true;
     this.callback = callback;
     this.startTime = Date.now();
@@ -130,7 +141,22 @@ class MiniGameManager {
 
     if (this.animFrame) cancelAnimationFrame(this.animFrame);
     this.gameLoop();
+    return true;
   }
+
+  startMiniGame(attacker, defender, boardPos, isAIAttacking, callback) {
+    const started = this.startDefensiveMiniGame({
+      attacker,
+      defender,
+      boardPos,
+      challengePlayerIsAI: isAIAttacking,
+    }, (result) => {
+      if (callback) callback(result === 'defended' ? 'defender' : 'attacker');
+    });
+    if (!started && callback) callback('attacker');
+    return started;
+  }
+
 
   startPracticeMiniGame(gameType, callback) {
     audioManager.init();
@@ -140,6 +166,11 @@ class MiniGameManager {
     this.isAIAttacking = false;
     this.attackerPiece = { type: 'pawn', color: 'white' };
     this.defenderPiece = { type: 'pawn', color: 'black' };
+    this.challengePiece = this.attackerPiece;
+    this.threatPiece = this.defenderPiece;
+    this.challengeResult = null;
+    this.challengeDifficulty = difficulty;
+    this.challengePlayerIsAI = false;
     this.botTimer = 0;
     this.nextBotAction = 0;
 
@@ -171,8 +202,8 @@ class MiniGameManager {
     const dt = 1 / 60;
     this.currentGame.update(dt);
 
-    // Bot AI plays the minigame when AI is attacking
-    if (this.isAIAttacking && !this.currentGame.done) {
+    // Bot AI plays the minigame when the challenge owner is AI-controlled.
+    if ((this.challengePlayerIsAI || this.isAIAttacking) && !this.currentGame.done) {
       this.botTimer += dt;
       // Human-like reaction delay: bot only acts every 0.15-0.4s
       if (!this.nextBotAction || this.botTimer >= this.nextBotAction) {
@@ -270,17 +301,17 @@ class MiniGameManager {
       ctx.shadowBlur = 0;
     }
 
-    // Piece icons at top
+    // Piece icons at top. Left is the threatened piece trying to survive.
     this._drawPieceIcon(ctx, ox + 40, oy + 30, this.attackerPiece, 'left');
     this._drawPieceIcon(ctx, ox + ow - 90, oy + 30, this.defenderPiece, 'right');
 
     ctx.fillStyle = cols.text;
     ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('VS', 640, oy + 55);
+    ctx.fillText('SURVIVE', 640, oy + 55);
 
     // Difficulty stars
-    const diff = MiniGameManager.calculateDifficulty(this.attackerPiece, this.defenderPiece, { row: 0, col: 0 });
+    const diff = this.challengeDifficulty || 1;
     ctx.fillStyle = '#ffcc00';
     ctx.font = '14px "Pixelify Sans", sans-serif';
     let stars = '';
@@ -299,22 +330,22 @@ class MiniGameManager {
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
       ctx.fillRect(ox + ow * 0.15, oy + oh * 0.35, ow * 0.7, oh * 0.3);
 
-      const isWin = this.currentGame.winner === 'attacker';
-      ctx.strokeStyle = isWin ? '#44ff44' : '#ff4444';
+      const defended = this.currentGame.winner === 'attacker';
+      ctx.strokeStyle = defended ? '#44ff44' : '#ff4444';
       ctx.lineWidth = 2;
       ctx.strokeRect(ox + ow * 0.15, oy + oh * 0.35, ow * 0.7, oh * 0.3);
 
-      ctx.fillStyle = isWin ? '#44ff44' : '#ff4444';
-      ctx.shadowColor = isWin ? '#44ff44' : '#ff4444';
+      ctx.fillStyle = defended ? '#44ff44' : '#ff4444';
+      ctx.shadowColor = defended ? '#44ff44' : '#ff4444';
       ctx.shadowBlur = 12;
       ctx.font = 'bold 28px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(isWin ? 'CAPTURED!' : 'BLOCKED!', 640, oy + oh * 0.55);
+      ctx.fillText(defended ? 'SAVED!' : 'CAPTURED!', 640, oy + oh * 0.55);
       ctx.shadowBlur = 0;
 
       ctx.fillStyle = cols.text + 'bb';
       ctx.font = '13px "Pixelify Sans", sans-serif';
-      ctx.fillText(isWin ? 'Piece captured successfully' : 'Square locked - move blocked', 640, oy + oh * 0.62);
+      ctx.fillText(defended ? 'The threatened piece survives' : 'The capture goes through', 640, oy + oh * 0.62);
 
       ctx.globalAlpha = alpha * globalAlpha;
     }
@@ -353,16 +384,19 @@ class MiniGameManager {
 
     if (this.callback) {
       const winner = this.currentGame ? this.currentGame.winner : 'attacker';
+      const result = winner === 'attacker' ? 'defended' : 'captured';
       const stats = store.get('stats');
       stats.miniGamesPlayed++;
       if (winner === 'attacker') stats.miniGamesWon++;
       store.set('stats', stats);
-      this.callback(winner);
+      this.challengeResult = result;
+      this.callback(result);
       this.callback = null;
     }
 
     this.currentGame = null;
     this.doneTime = 0;
+    this.challengePlayerIsAI = false;
   }
 
   handleClick(x, y) {

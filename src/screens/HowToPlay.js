@@ -16,9 +16,9 @@ const HowToPlay = {
       title: 'Capture Challenges',
       icon: 'play',
       lines: [
-        'Captures can trigger a short mini-game.',
-        'Win the challenge to keep the capture.',
-        'Lose and the target tile becomes locked.',
+        'Each side starts with two defense charges.',
+        'A threatened piece can spend one charge for a survival mini-game.',
+        'Win to survive; lose and the capture goes through.',
       ],
     },
     {

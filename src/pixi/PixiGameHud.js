@@ -38,6 +38,8 @@ const PixiGameHud = {
       game.reviewingAt,
       game.boardSnapshots.length,
       game.lockedTiles.length,
+      game.defensiveMiniGames?.white ?? 0,
+      game.defensiveMiniGames?.black ?? 0,
       game.capturedPieces.white.length,
       game.capturedPieces.black.length,
       game.moveHistory.length,
@@ -121,7 +123,14 @@ const PixiGameHud = {
       });
     }
 
-    this._text('CAPTURED', x + pad, y + 126, {
+    const charges = game.defensiveMiniGames?.[color] ?? 0;
+    this._text('DEFENSES: ' + charges, x + pad, y + 112, {
+      fontSize: 12,
+      fontWeight: '900',
+      fill: charges > 0 ? cols.accent : PixiColorUtil.alpha(cols.text, '44'),
+    });
+
+    this._text('CAPTURED', x + pad, y + 136, {
       fontSize: 13,
       fontWeight: '900',
       fill: PixiColorUtil.alpha(cols.text, '88'),
@@ -129,14 +138,14 @@ const PixiGameHud = {
 
     const captured = game.capturedPieces[color] || [];
     if (!captured.length) {
-      this._text('No captures yet', x + pad, y + 150, {
+      this._text('No captures yet', x + pad, y + 160, {
         fontSize: 15,
         fill: PixiColorUtil.alpha(cols.text, '44'),
       });
     } else {
       const symbols = { pawn: 'p', knight: 'N', bishop: 'B', rook: 'R', queen: 'Q', king: 'K' };
       const text = captured.slice(0, 24).map(p => symbols[p.type] || '?').join(' ');
-      const cap = this._text(text, x + pad, y + 150, {
+      const cap = this._text(text, x + pad, y + 160, {
         fontSize: 18,
         fontWeight: '700',
         fill: color === 'white' ? '#e8e0d0' : '#aaaaaa',
@@ -151,7 +160,7 @@ const PixiGameHud = {
     const blackMat = game.capturedPieces.black.reduce((s, p) => s + (values[p.type] || 0), 0);
     const adv = color === 'white' ? whiteMat - blackMat : blackMat - whiteMat;
     if (adv !== 0) {
-      this._text((adv > 0 ? '+' : '') + adv + ' material', x + pad, y + 178, {
+      this._text((adv > 0 ? '+' : '') + adv + ' material', x + pad, y + 188, {
         fontSize: 15,
         fontWeight: '700',
         fill: adv > 0 ? '#66dd77' : '#dd6677',
