@@ -219,9 +219,12 @@ const GameScreen = {
     if (typeof PixiGameOverOverlay !== 'undefined') {
       PixiGameOverOverlay.update(this);
     }
+    if (this.gameOver) {
+      this.renderGameOverOverlay(ctx, cols);
+    }
 
     const canvas = document.getElementById('gameCanvas');
-    if (canvas) canvas.style.pointerEvents = this.gameOver ? 'none' : 'auto';
+    if (canvas) canvas.style.pointerEvents = 'auto';
 
     // AI thinking indicator
     if (this.aiThinking) {
@@ -276,6 +279,75 @@ const GameScreen = {
         ctx.fillText(this.captureCombo + 'x COMBO!', 640, 80 + bounce);
       }
     }
+  },
+
+  getGameOverButtons() {
+    const buttons = [
+      { text: 'Play Again', action: 'rematch', x: 390, y: 470, w: 150, h: 42 },
+      { text: 'Main Menu', action: 'menu', x: 565, y: 470, w: 150, h: 42 },
+      { text: 'Themes', action: 'themes', x: 740, y: 470, w: 150, h: 42 },
+    ];
+    if (this.mode === 'story' && this.gameResult === 'white') {
+      buttons.push({ text: 'Next Level', action: 'next', x: 565, y: 530, w: 150, h: 42 });
+    }
+    return buttons;
+  },
+
+  renderGameOverOverlay(ctx, cols) {
+    this.gameOverTimer = Math.min(1, this.gameOverTimer + 0.08);
+    ctx.save();
+    ctx.globalAlpha = this.gameOverTimer;
+    ctx.fillStyle = 'rgba(0,0,0,0.64)';
+    ctx.fillRect(0, 0, 1280, 800);
+
+    const panelX = 320;
+    const panelY = 225;
+    const panelW = 640;
+    const panelH = (this.mode === 'story' && this.gameResult === 'white') ? 395 : 340;
+    UIHelpers.drawPanel(ctx, panelX, panelY, panelW, panelH, cols, { accentTop: true });
+
+    if (this.gameResult && this.gameResult !== 'draw') {
+      UIHelpers.drawIcon(ctx, 628, panelY + 54, 'crown', 14, cols, {
+        color: this.gameResult === 'white' ? cols.lightPiece : cols.darkPiece,
+      });
+    }
+
+    let msg = 'Draw!';
+    if (this.gameResult === 'white') msg = 'White Wins!';
+    else if (this.gameResult === 'black') msg = 'Black Wins!';
+
+    ctx.fillStyle = cols.text;
+    ctx.font = 'bold 34px "Pixelify Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(msg, 640, panelY + 112);
+
+    let reason = 'Game Over';
+    if (this.gameStatus === 'checkmate') reason = 'by Checkmate';
+    else if (this.gameStatus === 'stalemate') reason = 'by Stalemate';
+    else if (this.gameStatus === 'draw') reason = 'by Draw';
+    else if (this.gameStatus === 'resigned') reason = 'by Resignation';
+    ctx.fillStyle = cols.text + 'aa';
+    ctx.font = '15px "Pixelify Sans", sans-serif';
+    ctx.fillText(reason, 640, panelY + 140);
+
+    if (this.gameResult && this.currentCharacter) {
+      ctx.fillStyle = cols.text + 'bb';
+      ctx.font = '15px "Pixelify Sans", sans-serif';
+      ctx.textAlign = 'left';
+      const dlg = this.gameResult === 'white'
+        ? this.currentCharacter.dialogue.after
+        : this.currentCharacter.dialogue.win;
+      UIHelpers.wrapText(ctx, dlg || '', panelX + 48, panelY + 168, panelW - 96, 20, 5);
+    }
+
+    for (const btn of this.getGameOverButtons()) {
+      UIHelpers.drawButton(ctx, btn.x, btn.y, btn.w, btn.h, btn.text, cols, {
+        font: 'bold 14px "Pixelify Sans", sans-serif',
+        hover: this.hoveredGameOverBtn === btn.action,
+      });
+    }
+    ctx.restore();
   },
 
   renderSidePanel(ctx, cols, side, color) {
@@ -540,6 +612,13 @@ const GameScreen = {
 
     // Game over buttons
     if (this.gameOver) {
+      const buttons = this.getGameOverButtons();
+      for (const btn of buttons) {
+        if (x >= btn.x && x <= btn.x + btn.w && y >= btn.y && y <= btn.y + btn.h) {
+          this.handleGameOverAction(btn.action);
+          return;
+        }
+      }
       return;
     }
 
@@ -649,6 +728,14 @@ const GameScreen = {
 
     if (this.gameOver) {
       this.hoveredGameOverBtn = null;
+      const buttons = this.getGameOverButtons();
+      for (const btn of buttons) {
+        if (x >= btn.x && x <= btn.x + btn.w && y >= btn.y && y <= btn.y + btn.h) {
+          this.hoveredGameOverBtn = btn.action;
+          canvas.style.cursor = 'pointer';
+          return;
+        }
+      }
       canvas.style.cursor = 'default';
       return;
     }
