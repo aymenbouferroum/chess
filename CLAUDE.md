@@ -174,8 +174,9 @@ The game is migrating from Canvas 2D to PixiJS v8. Progress:
 - **Phase 0 (Cleanup)**: Done — removed bloat (assets/dropbox, assets/generated, dist/), optimized ocean_bg.png, fixed dead code
 - **Phase 1 (UI Components)**: Done — 12 PixiJS UI components built in `src/pixi/ui/`
 - **Phase 2 (Screen Migration)**: In progress — HomeScreen and HowToPlay migrated, rest pending
-- **Phase 3 (Mini-games)**: Pending
-- **Phase 4 (Canvas consolidation)**: Pending
+- **Phase 3 (Screen Polish)**: In progress — MiniGamePractice, CharacterSelect, and other Canvas 2D screens improved with grouping panels, better card styling, and proper hitbox sync. Still render via Canvas 2D but with significantly better visual quality.
+- **Phase 4 (Mini-games to PixiJS)**: Pending
+- **Phase 5 (Canvas consolidation)**: Pending
 
 ## UI/UX Guidelines
 
@@ -191,3 +192,9 @@ When working on UI changes:
 - **Colors**: use theme `cols` object for all colors. Use `PixiColorUtil.hexToNum()` for PixiJS numeric colors.
 - **Cleanup**: always call `PixiBackgroundRenderer.destroy()` in screen `destroy()` methods to prevent ticker leaks
 - **Changes will be incremental** — one screen at a time, verify each before moving to the next
+
+### Dev Screenshot System
+- Create a `.screenshot-trigger` file in the project root and Electron will capture the window and save `dev-screenshot.png`
+- Press **F5** in the running app to capture a screenshot immediately
+- Both `.screenshot-trigger` and `dev-screenshot.png` are in `.gitignore`
+- Used by Claude Code for visual verification during development
