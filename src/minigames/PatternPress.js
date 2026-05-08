@@ -253,13 +253,13 @@ class PatternPress {
 
     // Title
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('PATTERN PRESS', x + w / 2, y + 35);
 
     // Subtitle
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.fillStyle = cols.text + '88';
     ctx.fillText('Repeat the pattern! Length: ' + this.length + '/' + this.maxLength, x + w / 2, y + 55);
 
@@ -339,7 +339,7 @@ class PatternPress {
 
       // Key label
       ctx.fillStyle = isActive ? cols.text : cols.text + '88';
-      ctx.font = 'bold 16px monospace';
+      ctx.font = 'bold 16px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(this.keys[i].toUpperCase(), cx, cy);
@@ -350,7 +350,7 @@ class PatternPress {
     // Sequence display and progress dots
     if (this.waitingForInput) {
       ctx.fillStyle = cols.text;
-      ctx.font = '14px monospace';
+      ctx.font = '14px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('Your turn! Repeat the pattern', x + w / 2, startY + btnSize + 30);
@@ -409,7 +409,7 @@ class PatternPress {
       ctx.fillStyle = cols.text;
       ctx.shadowColor = win ? cols.accent : (cols.highlight || cols.accent);
       ctx.shadowBlur = 14;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(win ? 'You Win!' : 'You Lose!', x + w / 2, y + h / 2);

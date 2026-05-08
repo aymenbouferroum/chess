@@ -16,7 +16,7 @@ const PixiTextStyles = {
     fontSize: 16,
     fontWeight: '600',
     fill: '#ffffff',
-    letterSpacing: 1,
+    letterSpacing: 0,
   },
 
   BODY: {

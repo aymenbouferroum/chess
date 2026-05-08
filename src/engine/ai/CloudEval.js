@@ -64,7 +64,7 @@ class CloudEval {
       return getUci(pvs[Math.min(pvs.length - 1, Math.floor(Math.random() * pvs.length))]);
     }
 
-    return getUci(pvs[Math.floor(Math.random() * pvs.length)];
+    return getUci(pvs[Math.floor(Math.random() * pvs.length)]);
   }
 
   static uciToMoveCoords(uci) {

@@ -1,634 +1,382 @@
 const CharacterSelect = {
+  isPixiScreen: true,
+  pixiContainer: null,
   characters: [],
-  hoveredIndex: -1,
-  selectedChar: null,
-  showDialogue: false,
-
-  // Save-slot system state
   phase: 'slots',
-  hoveredSlot: -1,
-  hoveredTier: -1,
+  selectedSlot: 0,
+  selectedChar: null,
 
   init() {
     this.characters = CHARACTERS;
-    this.hoveredIndex = -1;
-    this.selectedChar = null;
-    this.showDialogue = false;
     this.phase = 'slots';
-    this.hoveredSlot = -1;
-    this.hoveredTier = -1;
+    this.selectedSlot = Math.max(0, (store.get('activeSaveSlot') || 1) - 1);
+    this.selectedChar = null;
+    this.build();
   },
 
-  destroy() {},
-
-  render(ctx, dt) {
-    const theme = ThemeManager.getTheme(store.get('theme'));
-    const cols = theme.colors;
-
-    const usePixiBg = typeof PixiMenuBackground !== 'undefined' && PixiMenuBackground.initialized;
-    if (usePixiBg) {
-      ctx.clearRect(0, 0, 1280, 800);
-    } else if (typeof backgroundRenderer !== 'undefined') {
-      backgroundRenderer.render(ctx, dt);
-    } else {
-      ctx.fillStyle = cols.background;
-      ctx.fillRect(0, 0, 1280, 800);
-    }
-
-    if (this.phase === 'slots') {
-      this.renderSlots(ctx, cols);
-    } else if (this.phase === 'difficulty') {
-      this.renderDifficulty(ctx, cols);
-    } else if (this.phase === 'characters') {
-      this.renderCharacters(ctx, cols);
-    }
-
-    UIHelpers.drawDitheredRect(ctx, 0, 770, 1280, 30, cols.accent, '11');
+  destroy() {
+    PixiPremiumScene.destroy(this);
   },
 
-  // ------------------------------------------------------------------
-  // SAVE SLOTS PHASE
-  // ------------------------------------------------------------------
-  renderSlots(ctx, cols) {
-    ctx.fillStyle = cols.text;
-    ctx.font = 'bold 28px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('STORY MODE', 640, 60);
-    ctx.fillStyle = cols.text + '88';
-    ctx.font = '14px monospace';
-    ctx.fillText('Choose Save', 640, 85);
-    UIHelpers.drawSeparator(ctx, 400, 95, 480, cols);
+  pixiUpdate(dt) {
+    PixiPremiumScene.update(this.pixiContainer, dt);
+  },
 
+  build() {
+    if (this.pixiContainer) this.pixiContainer.destroy({ children: true });
+    const subtitle = this.phase === 'slots'
+      ? 'Choose a save file'
+      : this.phase === 'difficulty'
+        ? 'Choose how the story scales'
+        : 'Pick the next challenger';
+    this.pixiContainer = PixiPremiumScene.root('Story Mode', subtitle, { footerHint: 'Story progress and save data stay unchanged' });
+    PixiScreenManager.setScreenContainer(this.pixiContainer);
+
+    if (this.phase === 'slots') this.buildSlots();
+    if (this.phase === 'difficulty') this.buildDifficulty();
+    if (this.phase === 'characters') this.buildCharacters();
+    PixiPremiumScene.button(this.pixiContainer, 36, 718, 160, 44, this.phase === 'slots' ? 'Home' : 'Back', () => this.back(), { icon: 'back' });
+  },
+
+  buildSlots() {
     const saves = store.get('storySaves');
-    const cardW = 300;
-    const cardH = 360;
-    const gap = 40;
-    const startX = (1280 - (cardW * 3 + gap * 2)) / 2;
-    const startY = 180;
-
-    for (let i = 0; i < 3; i++) {
-      const x = startX + i * (cardW + gap);
-      const y = startY;
-      const save = saves[i];
+    const startX = 112;
+    const y = 174;
+    const w = 320;
+    const h = 388;
+    const gap = 48;
+    saves.forEach((save, index) => {
       const isEmpty = !save.difficultyTier;
-      const isHover = this.hoveredSlot === i;
+      PixiPremiumScene.card(this.pixiContainer, startX + index * (w + gap), y, w, h, {
+        active: store.get('activeSaveSlot') === index + 1,
+        activeColor: isEmpty ? ThemeManager.getCurrentColors().accent : (save.completed ? '#7dea99' : ThemeManager.getCurrentColors().accent),
+        onClick: () => this.chooseSlot(index),
+        draw: (card) => {
+          const cols = ThemeManager.getCurrentColors();
+          const title = PixiPremiumScene.text(`SAVE ${index + 1}`, {
+            fontFamily: PixiTextStyles.FONT_TITLE,
+            fontSize: 20,
+            fontWeight: 'bold',
+            fill: cols.accent,
+          });
+          title.anchor.set(0.5);
+          title.x = w / 2;
+          title.y = 44;
+          card.addChild(title);
 
-      UIHelpers.drawCard(ctx, x, y, cardW, cardH, cols, {
-        hover: isHover,
-        accentStripe: isEmpty ? null : (save.completed ? '#44dd44' : cols.accent),
-      });
-
-      ctx.fillStyle = cols.accent;
-      ctx.font = 'bold 18px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(`SAVE ${i + 1}`, x + cardW / 2, y + 40);
-
-      if (isEmpty) {
-        ctx.fillStyle = cols.text + '66';
-        ctx.font = '16px monospace';
-        ctx.fillText('New Game', x + cardW / 2, y + 160);
-
-        ctx.fillStyle = cols.text + '44';
-        ctx.font = '13px monospace';
-        ctx.fillText('Click to start', x + cardW / 2, y + 190);
-        UIHelpers.drawIcon(ctx, x + cardW / 2 - 4, y + 140, 'lock', 8, cols, { color: cols.text + '44' });
-      } else {
-        const tierLabel = DifficultyScaler.getTierLabel(save.difficultyTier);
-        const tierElo = DifficultyScaler.getTierElo(save.difficultyTier);
-
-        ctx.fillStyle = save.difficultyTier === 'madness' ? (cols.checkHighlight || cols.accent) : cols.text;
-        ctx.font = 'bold 20px monospace';
-        ctx.fillText(tierLabel, x + cardW / 2, y + 100);
-
-        ctx.fillStyle = cols.text + '88';
-        ctx.font = '13px monospace';
-        ctx.fillText(tierElo, x + cardW / 2, y + 125);
-
-        ctx.fillStyle = cols.text;
-        ctx.font = '16px monospace';
-        ctx.fillText(`Level ${save.storyLevel} / 10`, x + cardW / 2, y + 180);
-
-        // Progress bar
-        UIHelpers.drawProgressBar(ctx, x + 30, y + 200, cardW - 60, 8, save.storyLevel / 10, cols);
-
-        if (save.completed) {
-          ctx.fillStyle = cols.checkHighlight || cols.accent;
-          ctx.font = 'bold 14px monospace';
-          ctx.fillText('COMPLETED', x + cardW / 2, y + 240);
-        } else {
-          ctx.fillStyle = cols.text + '66';
-          ctx.font = '13px monospace';
-          ctx.fillText('Click to continue', x + cardW / 2, y + 240);
-        }
-      }
-    }
-
-    UIHelpers.drawButton(ctx, 30, 740, 150, 40, '< Home', cols, { font: 'bold 14px monospace' });
-  },
-
-  // ------------------------------------------------------------------
-  // DIFFICULTY SELECT PHASE
-  // ------------------------------------------------------------------
-  renderDifficulty(ctx, cols) {
-    ctx.fillStyle = cols.text;
-    ctx.font = 'bold 28px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('SELECT YOUR CHESS EXPERIENCE', 640, 60);
-    ctx.fillStyle = cols.text + '88';
-    ctx.font = '14px monospace';
-    ctx.fillText('This determines how the AI scales across the story', 640, 85);
-    UIHelpers.drawSeparator(ctx, 300, 95, 680, cols);
-
-    const tiers = ['rookie', 'beginner', 'intermediate', 'advanced', 'expert'];
-    if (store.get('madnessUnlocked')) tiers.push('madness');
-
-    const btnW = 480;
-    const btnH = 60;
-    const gap = 16;
-    const startX = (1280 - btnW) / 2;
-    const startY = 220;
-
-    for (let i = 0; i < tiers.length; i++) {
-      const tier = tiers[i];
-      const config = DifficultyScaler.TIER_CONFIG[tier];
-      const y = startY + i * (btnH + gap);
-      const isHover = this.hoveredTier === i;
-
-      UIHelpers.drawCard(ctx, startX, y, btnW, btnH, cols, {
-        hover: isHover,
-        accentStripe: tier === 'madness' ? '#ff4444' : cols.accent,
-      });
-
-      ctx.fillStyle = tier === 'madness' ? (cols.checkHighlight || cols.accent) : cols.text;
-      ctx.font = 'bold 18px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(UIHelpers.truncateText(ctx, config.label, 200), startX + 20, y + 28);
-
-      ctx.fillStyle = cols.text + '88';
-      ctx.font = '13px monospace';
-      ctx.textAlign = 'right';
-      ctx.fillText(config.elo, startX + btnW - 20, y + 28);
-
-      ctx.fillStyle = cols.text + '66';
-      ctx.font = '12px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(UIHelpers.truncateText(ctx, config.desc, btnW - 40), startX + 20, y + 48);
-
-      const tierIcons = { rookie: 'shield', beginner: 'shield', intermediate: 'sword', advanced: 'sword', expert: 'crown', madness: 'skull' };
-      UIHelpers.drawIcon(ctx, startX + btnW - 25, y + 14, tierIcons[tier], 10, cols, { color: tier === 'madness' ? '#ff4444' : cols.text + '88' });
-    }
-
-    UIHelpers.drawButton(ctx, 30, 740, 150, 40, '< Back', cols, { font: 'bold 14px monospace' });
-  },
-
-  // ------------------------------------------------------------------
-  // CHARACTER SELECT PHASE
-  // ------------------------------------------------------------------
-  renderCharacters(ctx, cols) {
-    const save = store.getActiveSave();
-    const maxUnlocked = save ? save.maxUnlockedLevel : 1;
-    const currentStoryLevel = save ? save.storyLevel : 1;
-
-    // Title
-    ctx.fillStyle = cols.text;
-    ctx.font = 'bold 28px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('CHOOSE YOUR OPPONENT', 640, 50);
-
-    ctx.fillStyle = cols.text + '77';
-    ctx.font = '12px monospace';
-    ctx.fillText('Story Mode — ' + currentStoryLevel + '/10', 640, 75);
-
-    if (save && save.difficultyTier) {
-      ctx.fillStyle = cols.accent + 'aa';
-      ctx.font = '11px monospace';
-      ctx.fillText(DifficultyScaler.getTierLabel(save.difficultyTier) + ' difficulty', 640, 90);
-    }
-
-    // Character grid
-    const startX = 54;
-    const startY = 110;
-    const cardW = 220;
-    const cardH = 260;
-    const gapX = 18;
-    const gapY = 24;
-    const perRow = 5;
-
-    // Grouping panel behind the character grid
-    const totalRows = Math.ceil(this.characters.length / perRow);
-    const gridW = perRow * cardW + (perRow - 1) * gapX;
-    const gridH = totalRows * cardH + (totalRows - 1) * gapY;
-    const panelPad = 12;
-    UIHelpers.drawPanel(ctx, startX - panelPad, startY - panelPad, gridW + panelPad * 2, gridH + panelPad * 2, cols);
-
-    for (let i = 0; i < this.characters.length; i++) {
-      const ch = this.characters[i];
-      const row = Math.floor(i / perRow);
-      const col = i % perRow;
-      const x = startX + col * (cardW + gapX);
-      const y = startY + row * (cardH + gapY);
-      const isHover = i === this.hoveredIndex && ch.level <= maxUnlocked;
-      const isUnlocked = ch.level <= maxUnlocked;
-      const isSelected = this.selectedChar && this.selectedChar.id === ch.id;
-
-      UIHelpers.drawCard(ctx, x, y, cardW, cardH, cols, {
-        hover: isHover,
-        active: isSelected,
-        accentStripe: isUnlocked ? ch.colors.primary : null,
-        disabled: !isUnlocked,
-      });
-      ctx.globalAlpha = isUnlocked ? 1 : 0.5;
-
-      // Character sprite
-      const spriteSize = 80;
-      const sx = x + (cardW - spriteSize) / 2;
-      const sy = y + 20;
-
-      if (isUnlocked) {
-        const sprite = CharacterManager.getCharacterSprite(ch, spriteSize);
-        ctx.drawImage(sprite, sx, sy, spriteSize, spriteSize);
-      } else {
-        UIHelpers.drawIcon(ctx, x + cardW / 2 - 10, y + 50, 'lock', 20, cols, { color: cols.text + '44' });
-      }
-
-      ctx.globalAlpha = 1;
-
-      // Character name
-      ctx.fillStyle = isUnlocked ? cols.text : cols.text + '44';
-      ctx.font = isHover ? 'bold 15px "Pixelify Sans", monospace' : '15px "Pixelify Sans", monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(UIHelpers.truncateText(ctx, isUnlocked ? ch.name : '???', cardW - 20), x + cardW / 2, y + 118);
-
-      // Title
-      if (isUnlocked) {
-        ctx.fillStyle = ch.colors.primary;
-        ctx.font = '12px "Pixelify Sans", monospace';
-        ctx.fillText(UIHelpers.truncateText(ctx, ch.title, cardW - 20), x + cardW / 2, y + 136);
-      }
-
-      // Level
-      ctx.fillStyle = isUnlocked ? cols.text + '88' : cols.text + '44';
-      ctx.font = '13px "Pixelify Sans", monospace';
-      ctx.fillText('Level ' + ch.level, x + cardW / 2, y + 160);
-
-      // Level progress bar for current level
-      if (ch.level === currentStoryLevel && isUnlocked) {
-        UIHelpers.drawProgressBar(ctx, x + 20, y + cardH - 22, cardW - 40, 6, ch.level / 10, cols, { fill: cols.accent });
-      }
-
-      // "CURRENT" label
-      if (ch.level === currentStoryLevel) {
-        ctx.fillStyle = cols.accent;
-        ctx.font = 'bold 10px "Pixelify Sans", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('NEXT', x + cardW / 2, y + cardH - 30);
-      }
-
-      // Dialogue preview on hover — centered, clipped
-      if (isHover && !this.showDialogue) {
-        const hasBottom = (ch.level === currentStoryLevel);
-        const clipBottom = hasBottom ? 48 : 12;
-        const dlgY = y + 176;
-        const dlgMaxH = cardH - 176 - clipBottom;
-        const dlgMaxLines = Math.max(2, Math.floor(dlgMaxH / 15));
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(x + 4, dlgY - 4, cardW - 8, dlgMaxH + 4);
-        ctx.clip();
-        ctx.fillStyle = cols.text + 'cc';
-        ctx.font = '12px “Pixelify Sans”, monospace';
-        ctx.textAlign = 'center';
-        const quote = '”' + ch.dialogue.before + '”';
-        const words = quote.split(' ');
-        let line = '';
-        let lineNum = 0;
-        for (const word of words) {
-          const test = line ? line + ' ' + word : word;
-          if (ctx.measureText(test).width > cardW - 24 && line) {
-            if (lineNum >= dlgMaxLines - 1) {
-              ctx.fillText(line + '...', x + cardW / 2, dlgY + lineNum * 15);
-              lineNum++;
-              line = '';
-              break;
-            }
-            ctx.fillText(line, x + cardW / 2, dlgY + lineNum * 15);
-            lineNum++;
-            line = word;
+          const sigil = new PIXI.Graphics();
+          sigil.roundRect(w / 2 - 52, 86, 104, 104, 14)
+            .fill({ color: 0x071724, alpha: 0.72 })
+            .roundRect(w / 2 - 52, 86, 104, 104, 14)
+            .stroke({ color: PixiPremiumScene.color(isEmpty ? cols.accent : '#7dea99'), alpha: 0.78, width: 3 });
+          if (isEmpty) {
+            sigil.rect(w / 2 - 8, 112, 16, 52).fill({ color: PixiPremiumScene.color(cols.accent), alpha: 0.92 });
+            sigil.rect(w / 2 - 26, 130, 52, 16).fill({ color: PixiPremiumScene.color(cols.accent), alpha: 0.92 });
           } else {
-            line = test;
+            const progress = Math.min(1, (save.storyLevel || 1) / 10);
+            sigil.circle(w / 2, 138, 34).stroke({ color: PixiPremiumScene.color(cols.text), alpha: 0.34, width: 8 });
+            sigil.arc(w / 2, 138, 34, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress)
+              .stroke({ color: PixiPremiumScene.color(cols.accent), alpha: 0.95, width: 8 });
+            sigil.rect(w / 2 - 9, 127, 18, 22).fill({ color: PixiPremiumScene.color(cols.text), alpha: 0.9 });
           }
-        }
-        if (line && lineNum < dlgMaxLines) {
-          ctx.fillText(line, x + cardW / 2, dlgY + lineNum * 15);
-        }
-        ctx.restore();
-      }
+          card.addChild(sigil);
 
-      // Beat indicator
-      if (ch.level < currentStoryLevel) {
-        ctx.fillStyle = cols.accent;
-        ctx.font = '12px monospace';
-        ctx.fillText('DEFEATED', x + cardW / 2, y + cardH - 30);
-      }
-    }
+          if (isEmpty) {
+            const newGame = PixiPremiumScene.text('New Game', { fontSize: 28, fontWeight: '800', fill: cols.text });
+            newGame.anchor.set(0.5);
+            newGame.x = w / 2;
+            newGame.y = 214;
+            card.addChild(newGame);
 
-    // Bottom bar with back button and theme button
-    UIHelpers.drawButton(ctx, 30, 740, 150, 40, '< Home', cols, { font: 'bold 14px monospace' });
-    UIHelpers.drawButton(ctx, 1280 - 180, 740, 150, 40, 'Themes', cols, { font: 'bold 12px monospace' });
+            const hint = PixiPremiumScene.text('Start a fresh climb', { fontSize: 17, fill: PixiPremiumScene.alpha(cols.text, '99') });
+            hint.anchor.set(0.5);
+            hint.x = w / 2;
+            hint.y = 252;
+            card.addChild(hint);
+            return;
+          }
 
-    // Dialogue popup
-    if (this.showDialogue && this.selectedChar) {
-      const panelX = 200;
-      const panelY = 220;
-      const panelW = 880;
-      const panelH = 400;
-      const pad = 30;
-      const charColor = this.selectedChar.colors.primary;
+          const tier = DifficultyScaler.getTierLabel(save.difficultyTier);
+          const tierText = PixiPremiumScene.text(tier, { fontSize: 26, fontWeight: '800', fill: cols.text });
+          tierText.anchor.set(0.5);
+          tierText.x = w / 2;
+          tierText.y = 200;
+          PixiPremiumScene.fit(tierText, w - 56);
+          card.addChild(tierText);
 
-      // Dimmed backdrop
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
-      ctx.fillRect(0, 0, 1280, 800);
+          const elo = PixiPremiumScene.text(DifficultyScaler.getTierElo(save.difficultyTier), { fontSize: 16, fill: PixiPremiumScene.alpha(cols.text, '88') });
+          elo.anchor.set(0.5);
+          elo.x = w / 2;
+          elo.y = 232;
+          card.addChild(elo);
 
-      UIHelpers.drawPanel(ctx, panelX, panelY, panelW, panelH, cols, { accentTop: true });
+          this.progress(card, 42, 286, w - 84, 16, Math.min(1, (save.storyLevel || 1) / 10), cols);
+          const level = PixiPremiumScene.text(`Level ${save.storyLevel || 1} / 10`, { fontSize: 18, fontWeight: '700', fill: cols.text });
+          level.anchor.set(0.5);
+          level.x = w / 2;
+          level.y = 270;
+          card.addChild(level);
 
-      // Character sprite
-      const sprite = CharacterManager.getCharacterSprite(this.selectedChar, 72);
-      ctx.drawImage(sprite, panelX + pad, panelY + pad, 72, 72);
-
-      // Character name
-      ctx.fillStyle = charColor;
-      ctx.font = 'bold 22px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(UIHelpers.truncateText(ctx, this.selectedChar.name, 700), panelX + pad + 86, panelY + pad + 22);
-
-      // Character title
-      ctx.fillStyle = cols.text + '88';
-      ctx.font = '13px monospace';
-      ctx.fillText(UIHelpers.truncateText(ctx, this.selectedChar.title, 700), panelX + pad + 86, panelY + pad + 42);
-
-      // Dialogue text
-      ctx.fillStyle = cols.text;
-      ctx.font = '14px monospace';
-      UIHelpers.wrapText(ctx, this.selectedChar.dialogue.before, panelX + pad, panelY + pad + 80, panelW - pad * 2, 22);
-
-      // Buttons area — centered, proper spacing from bottom
-      const btnW = 220;
-      const btnH = 44;
-      const btnX = panelX + (panelW - btnW) / 2;
-      const fightY = panelY + panelH - pad - btnH - 50;
-      const cancelY = fightY + btnH + 10;
-
-      // Fight button with subtle accent glow
-      ctx.shadowColor = charColor;
-      ctx.shadowBlur = 12;
-      UIHelpers.drawButton(ctx, btnX, fightY, btnW, btnH, 'FIGHT!', cols, {
-        hover: true,
-        font: 'bold 18px monospace',
+          const status = PixiPremiumScene.text(save.completed ? 'Completed' : 'Click to continue', {
+            fontSize: 16,
+            fill: save.completed ? '#7dea99' : PixiPremiumScene.alpha(cols.text, '88'),
+          });
+          status.anchor.set(0.5);
+          status.x = w / 2;
+          status.y = 332;
+          card.addChild(status);
+        },
       });
-      ctx.shadowBlur = 0;
-
-      // Accent stripe on fight button
-      ctx.fillStyle = charColor;
-      ctx.fillRect(btnX + 5, fightY + 5, btnW - 10, 3);
-
-      // Cancel button
-      UIHelpers.drawButton(ctx, btnX, cancelY, btnW, btnH, 'Cancel', cols, {
-        font: 'bold 14px monospace',
-      });
-    }
+    });
   },
 
-  // ------------------------------------------------------------------
-  // INPUT HANDLERS
-  // ------------------------------------------------------------------
-  handleClick(x, y) {
-    if (this.phase === 'slots') return this.handleSlotsClick(x, y);
-    if (this.phase === 'difficulty') return this.handleDifficultyClick(x, y);
-    if (this.phase === 'characters') return this.handleCharactersClick(x, y);
-  },
-
-  handleSlotsClick(x, y) {
-    // Back button
-    if (x >= 30 && x <= 180 && y >= 740 && y <= 780) {
-      switchScreen('home');
-      return;
-    }
-
-    const saves = store.get('storySaves');
-    const cardW = 300;
-    const cardH = 360;
-    const gap = 40;
-    const startX = (1280 - (cardW * 3 + gap * 2)) / 2;
-    const startY = 180;
-
-    for (let i = 0; i < 3; i++) {
-      const cx = startX + i * (cardW + gap);
-      const cy = startY;
-      if (x >= cx && x <= cx + cardW && y >= cy && y <= cy + cardH) {
-        const save = saves[i];
-        if (!save.difficultyTier) {
-          // Empty slot: choose difficulty first
-          this.selectedSlot = i;
-          this.phase = 'difficulty';
-          this.hoveredTier = -1;
-        } else {
-          // Occupied slot: load it and go to character grid
-          store.setActiveSlot(i + 1);
-          this.phase = 'characters';
-          this.hoveredIndex = -1;
-          this.selectedChar = null;
-          this.showDialogue = false;
-        }
-        return;
-      }
-    }
-  },
-
-  handleDifficultyClick(x, y) {
-    // Back button
-    if (x >= 30 && x <= 180 && y >= 740 && y <= 780) {
-      this.phase = 'slots';
-      this.hoveredSlot = -1;
-      return;
-    }
-
+  buildDifficulty() {
     const tiers = ['rookie', 'beginner', 'intermediate', 'advanced', 'expert'];
     if (store.get('madnessUnlocked')) tiers.push('madness');
 
-    const btnW = 480;
-    const btnH = 60;
-    const gap = 16;
-    const startX = (1280 - btnW) / 2;
-    const startY = 220;
+    const intro = PixiPremiumScene.text('Each tier keeps the same story, but changes the AI curve across all ten opponents.', {
+      fontSize: 19,
+      fill: PixiPremiumScene.alpha(ThemeManager.getCurrentColors().text, 'bb'),
+    });
+    intro.anchor.set(0.5);
+    intro.x = 640;
+    intro.y = 146;
+    PixiPremiumScene.fit(intro, 900);
+    this.pixiContainer.addChild(intro);
 
-    for (let i = 0; i < tiers.length; i++) {
-      const by = startY + i * (btnH + gap);
-      if (x >= startX && x <= startX + btnW && y >= by && y <= by + btnH) {
-        const tier = tiers[i];
-        // Initialize the save slot
-        store.setActiveSlot(this.selectedSlot + 1);
-        store.setActiveSave({
-          difficultyTier: tier,
-          storyLevel: 1,
-          maxUnlockedLevel: 1,
-          selectedCharacter: null,
-          completed: false,
-        });
-        this.phase = 'characters';
-        this.hoveredIndex = -1;
-        this.selectedChar = null;
-        this.showDialogue = false;
-        return;
-      }
+    const startY = 190;
+    tiers.forEach((tier, i) => {
+      const config = DifficultyScaler.TIER_CONFIG[tier];
+      PixiPremiumScene.card(this.pixiContainer, 310, startY + i * 76, 660, 60, {
+        activeColor: tier === 'madness' ? '#ff4868' : ThemeManager.getCurrentColors().accent,
+        onClick: () => this.chooseDifficulty(tier),
+        draw: (card) => {
+          const cols = ThemeManager.getCurrentColors();
+          const label = PixiPremiumScene.text(config.label, {
+            fontSize: 23,
+            fontWeight: '800',
+            fill: tier === 'madness' ? '#ff8aa0' : cols.text,
+          });
+          label.x = 28;
+          label.y = 17;
+          PixiPremiumScene.fit(label, 280);
+          card.addChild(label);
+
+          const desc = PixiPremiumScene.text(config.desc, { fontSize: 15, fill: PixiPremiumScene.alpha(cols.text, '88') });
+          desc.x = 300;
+          desc.y = 12;
+          PixiPremiumScene.fit(desc, 250);
+          card.addChild(desc);
+
+          const elo = PixiPremiumScene.text(config.elo, { fontSize: 18, fontWeight: '800', fill: cols.accent });
+          elo.anchor.set(1, 0.5);
+          elo.x = 628;
+          elo.y = 32;
+          card.addChild(elo);
+        },
+      });
+    });
+  },
+
+  buildCharacters() {
+    const save = store.getActiveSave() || {};
+    const maxUnlocked = save.maxUnlockedLevel || 1;
+    const storyLevel = save.storyLevel || 1;
+    if (!this.selectedChar) {
+      this.selectedChar = this.characters.find(ch => ch.level === storyLevel && ch.level <= maxUnlocked) || this.characters.find(ch => ch.level <= maxUnlocked);
+    }
+
+    PixiPremiumScene.panel(this.pixiContainer, 72, 132, 492, 560, { accentAlpha: 0.42 });
+    const listTitle = PixiPremiumScene.text(`Story ${storyLevel} / 10`, { fontSize: 19, fontWeight: '800', fill: ThemeManager.getCurrentColors().text });
+    listTitle.x = 100;
+    listTitle.y = 154;
+    this.pixiContainer.addChild(listTitle);
+
+    const cardW = 216;
+    const cardGap = 18;
+    const cardStartX = 92;
+    this.characters.forEach((ch, i) => {
+      const row = i % 5;
+      const col = Math.floor(i / 5);
+      const x = cardStartX + col * (cardW + cardGap);
+      const y = 196 + row * 92;
+      const unlocked = ch.level <= maxUnlocked;
+      PixiPremiumScene.card(this.pixiContainer, x, y, cardW, 74, {
+        active: this.selectedChar && this.selectedChar.id === ch.id,
+        disabled: !unlocked,
+        activeColor: ch.colors.primary,
+        onClick: () => {
+          if (!unlocked) return;
+          this.selectedChar = ch;
+          this.build();
+        },
+        draw: (card) => {
+          const cols = ThemeManager.getCurrentColors();
+          const thumb = new PIXI.Sprite(unlocked ? PixiPremiumAssets.character(ch.id) : PixiPremiumAssets.icon('lock'));
+          thumb.width = 52;
+          thumb.height = 52;
+          thumb.x = 12;
+          thumb.y = 11;
+          thumb.alpha = unlocked ? 1 : 0.75;
+          card.addChild(thumb);
+
+          const name = PixiPremiumScene.text(unlocked ? ch.name : `Level ${ch.level} Locked`, { fontSize: 18, fontWeight: '800', fill: unlocked ? cols.text : PixiPremiumScene.alpha(cols.text, '77') });
+          name.x = 76;
+          name.y = 16;
+          PixiPremiumScene.fit(name, cardW - 92);
+          card.addChild(name);
+
+          const title = PixiPremiumScene.text(unlocked ? ch.title : `Beat level ${ch.level - 1}`, { fontSize: 12.5, fill: unlocked ? ch.colors.primary : PixiPremiumScene.alpha(cols.text, '55') });
+          title.x = 76;
+          title.y = 42;
+          PixiPremiumScene.fit(title, cardW - 94, 0.62);
+          card.addChild(title);
+        },
+      });
+    });
+
+    this.buildCharacterDetail();
+    PixiPremiumScene.button(this.pixiContainer, 1084, 718, 160, 44, 'Themes', () => switchScreen('themeSelect', { returnTo: 'characterSelect' }), { icon: 'spark' });
+  },
+
+  buildCharacterDetail() {
+    const ch = this.selectedChar;
+    if (!ch) return;
+    const cols = ThemeManager.getCurrentColors();
+    PixiPremiumScene.panel(this.pixiContainer, 604, 132, 604, 560, { accent: ch.colors.primary, accentAlpha: 0.9 });
+
+    const portrait = new PIXI.Sprite(PixiPremiumAssets.characterCard(ch.id));
+    portrait.width = 238;
+    portrait.height = 292;
+    portrait.x = 640;
+    portrait.y = 170;
+    this.pixiContainer.addChild(portrait);
+
+    const name = PixiPremiumScene.text(ch.name, { fontSize: 34, fontWeight: '900', fill: cols.text });
+    name.x = 914;
+    name.y = 174;
+    PixiPremiumScene.fit(name, 250);
+    this.pixiContainer.addChild(name);
+
+    const title = PixiPremiumScene.text(ch.title, { fontSize: 20, fontWeight: '800', fill: ch.colors.primary });
+    title.x = 916;
+    title.y = 218;
+    PixiPremiumScene.fit(title, 250);
+    this.pixiContainer.addChild(title);
+
+    const meta = PixiPremiumScene.text(`Level ${ch.level}  |  ${DifficultyScaler.getTierLabel((store.getActiveSave() || {}).difficultyTier)}`, {
+      fontSize: 16,
+      fill: PixiPremiumScene.alpha(cols.text, 'aa'),
+    });
+    meta.x = 916;
+    meta.y = 252;
+    PixiPremiumScene.fit(meta, 250);
+    this.pixiContainer.addChild(meta);
+
+    const quotePanel = new PIXI.Container();
+    this.pixiContainer.addChild(quotePanel);
+    const quoteX = 904;
+    const quoteY = 286;
+    const quoteW = 276;
+    const quoteH = 190;
+    PixiPremiumScene.panel(quotePanel, quoteX, quoteY, quoteW, quoteH, { accent: ch.colors.primary, accentAlpha: 0.35, alpha: 0.52 });
+    const quote = PixiPremiumScene.text(ch.dialogue.before, {
+      fontSize: 16,
+      fill: PixiPremiumScene.alpha(cols.text, 'dd'),
+      wordWrap: true,
+      wordWrapWidth: quoteW - 32,
+      lineHeight: 19,
+    });
+    this.fitWrappedText(quote, quoteH - 42, 11);
+    quote.x = quoteX + 16;
+    quote.y = quoteY + 24;
+    quotePanel.addChild(quote);
+
+    const beat = ch.level < ((store.getActiveSave() || {}).storyLevel || 1);
+    const next = ch.level === ((store.getActiveSave() || {}).storyLevel || 1);
+    const status = beat ? 'Defeated' : next ? 'Next Battle' : 'Unlocked';
+    const statusText = PixiPremiumScene.text(status, { fontSize: 18, fontWeight: '800', fill: beat ? '#7dea99' : cols.accent });
+    statusText.x = 640;
+    statusText.y = 496;
+    this.pixiContainer.addChild(statusText);
+
+    PixiPremiumScene.button(this.pixiContainer, 640, 544, 250, 54, 'Fight', () => this.startFight(), { primary: true, icon: 'play' });
+  },
+
+  fitWrappedText(text, maxHeight, minFontSize) {
+    let size = Number(text.style.fontSize) || 16;
+    while (text.height > maxHeight && size > minFontSize) {
+      size -= 1;
+      text.style.fontSize = size;
+      text.style.lineHeight = Math.max(size + 3, 14);
     }
   },
 
-  handleCharactersClick(x, y) {
-    // Back button
-    if (x >= 30 && x <= 180 && y >= 740 && y <= 780) {
+  progress(parent, x, y, w, h, value, cols) {
+    const g = new PIXI.Graphics();
+    g.roundRect(x, y, w, h, 5).fill({ color: 0x081624, alpha: 0.9 });
+    g.roundRect(x, y, w, h, 5).stroke({ color: PixiPremiumScene.color(cols.text), alpha: 0.35, width: 2 });
+    g.roundRect(x + 3, y + 3, Math.max(8, (w - 6) * value), h - 6, 3).fill({ color: PixiPremiumScene.color(cols.accent), alpha: 0.96 });
+    parent.addChild(g);
+  },
+
+  chooseSlot(index) {
+    this.selectedSlot = index;
+    const save = store.get('storySaves')[index];
+    if (!save.difficultyTier) {
+      this.phase = 'difficulty';
+    } else {
+      store.setActiveSlot(index + 1);
+      store.saveProgress();
+      this.phase = 'characters';
+    }
+    this.build();
+  },
+
+  chooseDifficulty(tier) {
+    store.setActiveSlot(this.selectedSlot + 1);
+    store.setActiveSave({
+      difficultyTier: tier,
+      storyLevel: 1,
+      maxUnlockedLevel: 1,
+      selectedCharacter: null,
+      completed: false,
+    });
+    store.saveProgress();
+    this.phase = 'characters';
+    this.selectedChar = this.characters[0];
+    this.build();
+  },
+
+  startFight() {
+    if (!this.selectedChar) return;
+    store.setActiveSave({
+      selectedCharacter: this.selectedChar.id,
+      storyLevel: this.selectedChar.level,
+    });
+    store.update({
+      selectedCharacter: this.selectedChar.id,
+      storyLevel: this.selectedChar.level,
+      mode: 'story',
+    });
+    store.saveProgress();
+    switchScreen('game');
+  },
+
+  back() {
+    if (this.phase === 'slots') {
       switchScreen('home');
       return;
     }
-    // Theme button
-    if (x >= 1280 - 180 && x <= 1280 - 30 && y >= 740 && y <= 780) {
-      switchScreen('themeSelect', { returnTo: 'characterSelect' });
-      return;
-    }
-
-    const save = store.getActiveSave();
-    const maxUnlocked = save ? save.maxUnlockedLevel : 1;
-
-    // Dialogue buttons (match updated dialog layout)
-    if (this.showDialogue && this.selectedChar) {
-      const btnX = 530;
-      const btnW = 220;
-      const fightY = 496;
-      const cancelY = 550;
-      const btnH = 44;
-      if (x >= btnX && x <= btnX + btnW && y >= fightY && y <= fightY + btnH) {
-        store.set('selectedCharacter', this.selectedChar);
-        store.set('storyLevel', this.selectedChar.level);
-        store.set('mode', 'story');
-        store.setActiveSave({
-          selectedCharacter: this.selectedChar,
-          storyLevel: this.selectedChar.level,
-        });
-        switchScreen('game');
-        return;
-      }
-      if (x >= btnX && x <= btnX + btnW && y >= cancelY && y <= cancelY + btnH) {
-        this.showDialogue = false;
-        this.selectedChar = null;
-        return;
-      }
-      return;
-    }
-
-    // Character cards
-    const startX = 54;
-    const startY = 110;
-    const cardW = 220;
-    const cardH = 260;
-    const gapX = 18;
-    const gapY = 24;
-    const perRow = 5;
-
-    for (let i = 0; i < this.characters.length; i++) {
-      const ch = this.characters[i];
-      if (ch.level > maxUnlocked) continue;
-      const row = Math.floor(i / perRow);
-      const col = i % perRow;
-      const cx = startX + col * (cardW + gapX);
-      const cy = startY + row * (cardH + gapY);
-      if (x >= cx && x <= cx + cardW && y >= cy && y <= cy + cardH) {
-        this.selectedChar = ch;
-        this.showDialogue = true;
-        return;
-      }
-    }
-  },
-
-  handleMouseMove(x, y) {
-    if (this.phase === 'slots') {
-      this.hoveredSlot = -1;
-      const cardW = 300;
-      const cardH = 360;
-      const gap = 40;
-      const startX = (1280 - (cardW * 3 + gap * 2)) / 2;
-      const startY = 180;
-      for (let i = 0; i < 3; i++) {
-        const cx = startX + i * (cardW + gap);
-        const cy = startY;
-        if (x >= cx && x <= cx + cardW && y >= cy && y <= cy + cardH) {
-          this.hoveredSlot = i;
-          return;
-        }
-      }
-      return;
-    }
-
     if (this.phase === 'difficulty') {
-      this.hoveredTier = -1;
-      const tiers = ['rookie', 'beginner', 'intermediate', 'advanced', 'expert'];
-      if (store.get('madnessUnlocked')) tiers.push('madness');
-      const btnW = 480;
-      const btnH = 60;
-      const gap = 16;
-      const startX = (1280 - btnW) / 2;
-      const startY = 220;
-      for (let i = 0; i < tiers.length; i++) {
-        const by = startY + i * (btnH + gap);
-        if (x >= startX && x <= startX + btnW && y >= by && y <= by + btnH) {
-          this.hoveredTier = i;
-          return;
-        }
-      }
+      this.phase = 'slots';
+      this.build();
       return;
     }
-
-    if (this.phase === 'characters') {
-      if (this.showDialogue) return;
-      const save = store.getActiveSave();
-      const maxUnlocked = save ? save.maxUnlockedLevel : 1;
-      this.hoveredIndex = -1;
-      const startX = 54;
-      const startY = 110;
-      const cardW = 220;
-      const cardH = 260;
-      const gapX = 18;
-      const gapY = 24;
-      const perRow = 5;
-
-      for (let i = 0; i < this.characters.length; i++) {
-        const ch = this.characters[i];
-        if (ch.level > maxUnlocked) continue;
-        const row = Math.floor(i / perRow);
-        const col = i % perRow;
-        const cx = startX + col * (cardW + gapX);
-        const cy = startY + row * (cardH + gapY);
-        if (x >= cx && x <= cx + cardW && y >= cy && y <= cy + cardH) {
-          this.hoveredIndex = i;
-          return;
-        }
-      }
-    }
+    switchScreen('home');
   },
 
   handleKeyDown(e) {
-    if (e.key === 'Escape') {
-      if (this.phase === 'slots') {
-        switchScreen('home');
-      } else if (this.phase === 'difficulty') {
-        this.phase = 'slots';
-        this.hoveredSlot = -1;
-      } else if (this.phase === 'characters') {
-        if (this.showDialogue) {
-          this.showDialogue = false;
-          this.selectedChar = null;
-        } else {
-          switchScreen('home');
-        }
-      }
-    }
+    if (e.key === 'Escape') this.back();
   },
 };

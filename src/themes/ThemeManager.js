@@ -1,4 +1,8 @@
 class ThemeManager {
+  static getCurrentColors() {
+    return this.getTheme(store.get('theme')).colors;
+  }
+
   static getTheme(id) {
     const t = THEMES.find(t => t.id === id) || THEMES[0];
     if (id === 'custom') {

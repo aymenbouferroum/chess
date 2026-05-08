@@ -210,12 +210,12 @@ class QuickClick {
 
     // Title
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('QUICK CLICK!', x + w / 2, y + 40);
 
     // Subtitle
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.fillStyle = cols.text;
     ctx.globalAlpha = 0.5;
     ctx.fillText('Click as fast as you can!', x + w / 2, y + 60);
@@ -229,7 +229,7 @@ class QuickClick {
       ctx.shadowBlur = 10;
     }
     ctx.fillStyle = timerColor;
-    ctx.font = 'bold 28px monospace';
+    ctx.font = 'bold 28px "Pixelify Sans", sans-serif';
     ctx.fillText(Math.ceil(this.timeLeft) + 's', x + w / 2, y + 110);
     ctx.restore();
 
@@ -279,7 +279,7 @@ class QuickClick {
 
     // Label
     ctx.fillStyle = cols.text;
-    ctx.font = '12px monospace';
+    ctx.font = '12px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('You: ' + this.p1Clicks, a1x + barW / 2, a1y + barH / 2 + 4);
 
@@ -323,7 +323,7 @@ class QuickClick {
 
     // Label
     ctx.fillStyle = cols.text;
-    ctx.font = '12px monospace';
+    ctx.font = '12px "Pixelify Sans", sans-serif';
     ctx.fillText('Defender: ' + this.p2Clicks, a2x + barW / 2, a2y + barH / 2 + 4);
 
     // Combo counter
@@ -334,7 +334,7 @@ class QuickClick {
       ctx.shadowColor = cols.accent;
       ctx.shadowBlur = 16;
       ctx.fillStyle = cols.accent;
-      ctx.font = 'bold 22px monospace';
+      ctx.font = 'bold 22px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(this.comboCount + 'x COMBO!', x + w / 2, y + 195);
       ctx.restore();
@@ -365,7 +365,7 @@ class QuickClick {
 
     // Instructions
     ctx.fillStyle = cols.text;
-    ctx.font = '11px monospace';
+    ctx.font = '11px "Pixelify Sans", sans-serif';
     ctx.globalAlpha = 0.4;
     ctx.fillText('Click anywhere to mash!', x + w / 2, y + 220);
     ctx.globalAlpha = 1;
@@ -379,7 +379,7 @@ class QuickClick {
       ctx.shadowColor = win ? cols.accent : (cols.highlight || cols.accent);
       ctx.shadowBlur = 14;
       ctx.fillStyle = cols.text;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       if (this.winner === 'attacker') {
         ctx.fillText('You Win!', x + w / 2, y + h / 2);
       } else {

@@ -248,10 +248,10 @@ class DodgeFalling {
 
     // Title
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('DODGE FALLING', x + w / 2, y + 28);
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.fillStyle = cols.text + '88';
     ctx.fillText('Dodge the falling blocks! Use arrow keys or click sides.', x + w / 2, y + 46);
 
@@ -273,7 +273,7 @@ class DodgeFalling {
 
     // Timer
     ctx.fillStyle = cols.text + '66';
-    ctx.font = '12px monospace';
+    ctx.font = '12px "Pixelify Sans", sans-serif';
     ctx.fillText('Time: ' + Math.ceil(this.timeLeft) + 's', x + w / 2, y + 78);
 
     // Play area background
@@ -371,7 +371,7 @@ class DodgeFalling {
       ctx.fillStyle = cols.text;
       ctx.shadowColor = win ? cols.accent : (cols.highlight || cols.accent);
       ctx.shadowBlur = 14;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(win ? 'You Win!' : 'You Lose!', x + w / 2, y + h / 2);
       ctx.shadowBlur = 0;

@@ -129,11 +129,11 @@ class TimingStrike {
     ctx.strokeRect(x, y, w, h);
 
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('TIMING STRIKE', x + w / 2, y + 35);
 
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.fillStyle = cols.text + '88';
     ctx.fillText('Stop the bar in the green zone!', x + w / 2, y + 55);
 
@@ -145,7 +145,7 @@ class TimingStrike {
     ctx.fill();
     ctx.restore();
     ctx.fillStyle = cols.accent;
-    ctx.font = 'bold 14px monospace';
+    ctx.font = 'bold 14px "Pixelify Sans", sans-serif';
     ctx.fillText('Score: ' + this.score + '/300', x + w / 2, y + 78);
 
     // The bar
@@ -216,7 +216,7 @@ class TimingStrike {
 
     // Labels
     ctx.fillStyle = cols.text + '66';
-    ctx.font = '10px monospace';
+    ctx.font = '10px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('0%', barX, barY + barH + 20);
     ctx.fillText('100%', barX + barW, barY + barH + 20);
@@ -224,13 +224,13 @@ class TimingStrike {
     // Hit indicator
     if (!this.waitingForStrike && !this.done) {
       ctx.fillStyle = cols.text + '88';
-      ctx.font = '14px monospace';
+      ctx.font = '14px "Pixelify Sans", sans-serif';
       ctx.fillText('Get ready...', x + w / 2, barY + barH + 50);
     }
 
     // Strikes
     ctx.fillStyle = cols.text + '66';
-    ctx.font = '11px monospace';
+    ctx.font = '11px "Pixelify Sans", sans-serif';
     ctx.fillText('Strike ' + (this.strikes + 1) + '/' + this.maxStrikes, x + w / 2, y + 220);
 
     if (this.flashTimer > 0) {
@@ -245,7 +245,7 @@ class TimingStrike {
       ctx.fillStyle = cols.text;
       ctx.shadowColor = win ? cols.accent : (cols.highlight || cols.accent);
       ctx.shadowBlur = 14;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       ctx.fillText(win ? 'You Win!' : 'You Lose!', x + w / 2, y + h / 2);
       ctx.shadowBlur = 0;
     }

@@ -316,7 +316,7 @@ class ShieldBlock {
     ctx.shadowBlur = 0;
 
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('← →', shieldPx, shieldY + sh + 14);
 
@@ -335,23 +335,23 @@ class ShieldBlock {
     ctx.lineWidth = 1;
     ctx.strokeRect(hpX, hpY, hpW, hpH);
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 10px monospace';
+    ctx.font = 'bold 10px "Pixelify Sans", sans-serif';
     ctx.fillText('HP ' + this.hp + '/' + this.maxHp, hpX + hpW / 2, hpY + 9);
 
     const timeLeft = Math.max(0, this.duration - this.timer);
     ctx.fillStyle = timeLeft < 3 ? (cols.highlight || cols.accent) : cols.text;
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText(timeLeft.toFixed(1) + 's', arenaX + arenaW - 8, hpY + 9);
 
     ctx.textAlign = 'left';
     ctx.fillStyle = cols.text + '88';
-    ctx.font = '10px monospace';
+    ctx.font = '10px "Pixelify Sans", sans-serif';
     ctx.fillText('Blocks: ' + this.blockCount, arenaX + 8, hpY + 9);
 
     if (this.comboCount > 1) {
       ctx.fillStyle = cols.highlight || cols.accent;
-      ctx.font = 'bold 14px monospace';
+      ctx.font = 'bold 14px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.shadowColor = cols.highlight || cols.accent;
       ctx.shadowBlur = 8;
@@ -366,7 +366,7 @@ class ShieldBlock {
       ctx.fillStyle = cols.text;
       ctx.shadowColor = win ? cols.accent : (cols.highlight || cols.accent);
       ctx.shadowBlur = 14;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(win ? 'You Win!' : 'You Lose!', x + w / 2, y + h / 2);
       ctx.shadowBlur = 0;

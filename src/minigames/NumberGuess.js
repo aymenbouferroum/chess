@@ -148,7 +148,7 @@ class NumberGuess {
     ctx.shadowColor = win ? cols.accent : (cols.highlight || cols.accent);
     ctx.shadowBlur = 14;
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(win ? 'You Win!' : 'You Lose!', x + w / 2, y + h / 2);
@@ -165,10 +165,10 @@ class NumberGuess {
     ctx.strokeRect(x, y, w, h);
 
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('NUMBER GUESS', x + w / 2, y + 30);
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.fillStyle = cols.text + '88';
     ctx.fillText('Guess the number between 1-' + this.maxNum + ' (' + this.guesses.length + '/' + this.maxGuesses + ')', x + w / 2, y + 50);
 
@@ -198,7 +198,7 @@ class NumberGuess {
     ctx.strokeRect(rangeX, rangeY, rangeW, 12);
 
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.fillText('Remaining: ' + bounds.low + '-' + bounds.high, x + w / 2, y + 88);
 
     if (this.feedback && this.feedbackTimer > 0) {
@@ -206,7 +206,7 @@ class NumberGuess {
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.fillStyle = this.feedback === 'Cooler' ? cols.text : (cols.highlight || cols.accent);
-      ctx.font = 'bold 13px monospace';
+      ctx.font = 'bold 13px "Pixelify Sans", sans-serif';
       ctx.shadowColor = ctx.fillStyle;
       ctx.shadowBlur = 8;
       ctx.fillText(this.feedback, x + w / 2, y + 136 - (1 - alpha) * 8);
@@ -256,7 +256,7 @@ class NumberGuess {
       ctx.stroke();
 
       ctx.fillStyle = cols.text;
-      ctx.font = 'bold 12px monospace';
+      ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('' + num, bx + btnSize / 2, by + btnSize / 2 + 4);
     }

@@ -47,17 +47,17 @@ const PauseMenu = {
       UIHelpers.drawIcon(ctx, 636, 325, 'skull', 10, cols, { color: '#ff4444' });
 
       ctx.fillStyle = cols.text;
-      ctx.font = 'bold 22px monospace';
+      ctx.font = 'bold 22px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Surrender?', 640, 350);
       ctx.fillStyle = cols.text + '88';
-      ctx.font = '14px monospace';
+      ctx.font = '14px "Pixelify Sans", sans-serif';
       ctx.fillText('You will lose this game.', 640, 380);
 
       const isHoverYes = this.hoveredBtn === 'surrender-yes';
       const isHoverNo = this.hoveredBtn === 'surrender-no';
-      UIHelpers.drawButton(ctx, 460, 420, 140, 40, 'Yes', cols, { font: 'bold 13px monospace', hover: isHoverYes });
-      UIHelpers.drawButton(ctx, 680, 420, 140, 40, 'Cancel', cols, { font: 'bold 13px monospace', hover: isHoverNo });
+      UIHelpers.drawButton(ctx, 460, 420, 140, 40, 'Yes', cols, { font: 'bold 13px "Pixelify Sans", sans-serif', hover: isHoverYes });
+      UIHelpers.drawButton(ctx, 680, 420, 140, 40, 'Cancel', cols, { font: 'bold 13px "Pixelify Sans", sans-serif', hover: isHoverNo });
       ctx.globalAlpha = 1;
       return;
     }
@@ -69,7 +69,7 @@ const PauseMenu = {
 
     UIHelpers.drawIcon(ctx, 636, 200, 'gear', 12, cols);
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 32px monospace';
+    ctx.font = 'bold 32px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('PAUSED', 640, 230);
 
@@ -77,7 +77,7 @@ const PauseMenu = {
 
     const moveCount = (typeof GameScreen !== 'undefined' && GameScreen.moveHistory) ? GameScreen.moveHistory.length : 0;
     ctx.fillStyle = cols.text + '55';
-    ctx.font = '12px monospace';
+    ctx.font = '12px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Move ' + moveCount, 640, 268);
 
@@ -90,7 +90,7 @@ const PauseMenu = {
 
     for (const btn of buttons) {
       const isHover = this.hoveredBtn === btn.action;
-      UIHelpers.drawButton(ctx, 540, btn.y, 200, 45, btn.text, cols, { font: 'bold 16px monospace', hover: isHover });
+      UIHelpers.drawButton(ctx, 540, btn.y, 200, 45, btn.text, cols, { font: 'bold 16px "Pixelify Sans", sans-serif', hover: isHover });
       btn._bounds = { x: 540, y: btn.y, w: 200, h: 45 };
     }
     ctx.globalAlpha = 1;

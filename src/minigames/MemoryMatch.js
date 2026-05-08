@@ -175,11 +175,11 @@ class MemoryMatch {
     ctx.strokeRect(x, y, w, h);
 
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('MEMORY MATCH', x + w / 2, y + 35);
 
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.fillStyle = cols.text + '88';
     ctx.fillText('Match the pairs! Attempts: ' + this.attempts + '/' + this.maxAttempts, x + w / 2, y + 55);
 
@@ -233,7 +233,7 @@ class MemoryMatch {
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.fillStyle = cols.text;
-        ctx.font = '28px monospace';
+        ctx.font = '28px "Pixelify Sans", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(this.cards[i], cx + cardW / 2, cy + cardH / 2 + 8);
       } else {
@@ -255,7 +255,7 @@ class MemoryMatch {
         ctx.stroke();
         // Decorative pattern on back
         ctx.fillStyle = cols.text + '22';
-        ctx.font = 'bold 18px monospace';
+        ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('?', cx + cardW / 2, cy + cardH / 2 + 6);
       }
@@ -264,7 +264,7 @@ class MemoryMatch {
 
     // Progress
     ctx.fillStyle = cols.text + '66';
-    ctx.font = '11px monospace';
+    ctx.font = '11px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Pairs: ' + this.pairs + '/' + this.totalPairs, x + w / 2, y + 230);
 
@@ -275,7 +275,7 @@ class MemoryMatch {
       ctx.fillStyle = cols.text;
       ctx.shadowColor = win ? cols.accent : (cols.highlight || cols.accent);
       ctx.shadowBlur = 14;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       ctx.fillText(win ? 'You Win!' : 'You Lose!', x + w / 2, y + h / 2);
       ctx.shadowBlur = 0;
     }

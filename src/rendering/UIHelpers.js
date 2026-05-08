@@ -245,12 +245,14 @@ class UIHelpers {
     }
 
     // Border
-    ctx.strokeStyle = disabled ? this.alpha(cols.text, '22') : (hover || active ? cols.accent : this.alpha(cols.text, '44'));
-    ctx.lineWidth = (hover || active) ? 2 : 1;
+    ctx.strokeStyle = disabled
+      ? this.alpha(cols.text, '22')
+      : (hover ? cols.accent : this.alpha(cols.text, active ? '55' : '44'));
+    ctx.lineWidth = hover ? 2 : 1;
     ctx.strokeRect(x, y, w, h);
 
     // Corner ornaments when highlighted
-    if (hover || active) {
+    if (hover) {
       this._drawCorners(ctx, x, y, w, h, cols.accent, 3);
     }
 

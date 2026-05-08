@@ -182,7 +182,7 @@ class TargetPractice {
     ctx.shadowColor = win ? cols.accent : (cols.highlight || cols.accent);
     ctx.shadowBlur = 14;
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(win ? 'You Win!' : 'You Lose!', x + w / 2, y + h / 2);
@@ -202,10 +202,10 @@ class TargetPractice {
     ctx.strokeRect(x, y, w, h);
 
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('TARGET PRACTICE', x + w / 2, y + 30);
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.fillStyle = cols.text + '88';
     ctx.fillText('Click the targets before they disappear!', x + w / 2, y + 50);
 
@@ -213,7 +213,7 @@ class TargetPractice {
     ctx.fillStyle = cols.panel + 'dd';
     ctx.fill();
     ctx.fillStyle = cols.accent;
-    ctx.font = 'bold 13px monospace';
+    ctx.font = 'bold 13px "Pixelify Sans", sans-serif';
     ctx.fillText('Hits: ' + this.hits + ' | Time: ' + Math.ceil(this.timeLeft) + 's', x + w / 2, y + 76);
 
     const targetBaseY = y + 95;
@@ -269,7 +269,7 @@ class TargetPractice {
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.fillStyle = cols.highlight || cols.accent;
-      ctx.font = 'bold 13px monospace';
+      ctx.font = 'bold 13px "Pixelify Sans", sans-serif';
       ctx.fillText(p.text, x + 20 + p.x, targetBaseY + p.y);
       ctx.restore();
     }

@@ -13,15 +13,15 @@ const PixiMiniGameFX = {
 
   spawnCombo(x, y, comboCount) {
     if (!this.container) return;
-    const text = new PIXI.Text(comboCount + 'x COMBO!', {
-      fontFamily: 'monospace',
-      fontSize: 22,
-      fontWeight: 'bold',
-      fill: 0xffdd44,
-      dropShadow: true,
-      dropShadowColor: 0xffdd44,
-      dropShadowBlur: 12,
-      dropShadowDistance: 0,
+    const text = new PIXI.Text({
+      text: comboCount + 'x COMBO!',
+      style: {
+        fontFamily: PixiTextStyles.FONT_BODY,
+        fontSize: 22,
+        fontWeight: 'bold',
+        fill: 0xffdd44,
+        dropShadow: { color: 0xffdd44, blur: 12, distance: 0, alpha: 0.75 },
+      },
     });
     text.anchor.set(0.5);
     text.x = x;
@@ -48,9 +48,7 @@ const PixiMiniGameFX = {
     for (let i = 0; i < count; i++) {
       const sprite = new PIXI.Graphics();
       const size = 2 + Math.random() * 3;
-      sprite.beginFill(color, 0.9);
-      sprite.drawRect(-size / 2, -size / 2, size, size);
-      sprite.endFill();
+      sprite.rect(-size / 2, -size / 2, size, size).fill({ color, alpha: 0.9 });
 
       const angle = Math.random() * Math.PI * 2;
       const speed = 60 + Math.random() * 100;
@@ -75,9 +73,7 @@ const PixiMiniGameFX = {
   spawnBlockFlash(x, y, w, h) {
     if (!this.container) return;
     const flash = new PIXI.Graphics();
-    flash.beginFill(0x44ff44, 0.25);
-    flash.drawRect(x, y, w, h);
-    flash.endFill();
+    flash.rect(x, y, w, h).fill({ color: 0x44ff44, alpha: 0.25 });
     this.container.addChild(flash);
 
     gsap.to(flash, {
@@ -94,9 +90,7 @@ const PixiMiniGameFX = {
   spawnHitFlash(x, y, w, h) {
     if (!this.container) return;
     const flash = new PIXI.Graphics();
-    flash.beginFill(0xff4444, 0.25);
-    flash.drawRect(x, y, w, h);
-    flash.endFill();
+    flash.rect(x, y, w, h).fill({ color: 0xff4444, alpha: 0.25 });
     this.container.addChild(flash);
 
     gsap.to(flash, {
@@ -114,15 +108,15 @@ const PixiMiniGameFX = {
     if (!this.container) return;
     fontSize = fontSize || 18;
     const color = typeof colorHex === 'string' ? parseInt(colorHex.replace('#', '0x'), 16) : (colorHex || 0xffffff);
-    const text = new PIXI.Text(textStr, {
-      fontFamily: 'monospace',
-      fontSize: fontSize,
-      fontWeight: 'bold',
-      fill: color,
-      dropShadow: true,
-      dropShadowColor: color,
-      dropShadowBlur: 8,
-      dropShadowDistance: 0,
+    const text = new PIXI.Text({
+      text: textStr,
+      style: {
+        fontFamily: PixiTextStyles.FONT_BODY,
+        fontSize: fontSize,
+        fontWeight: 'bold',
+        fill: color,
+        dropShadow: { color, blur: 8, distance: 0, alpha: 0.75 },
+      },
     });
     text.anchor.set(0.5);
     text.x = x;

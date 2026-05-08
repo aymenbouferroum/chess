@@ -163,7 +163,7 @@ class PowerMeter {
     ctx.shadowColor = win ? (cols.accent || cols.highlight) : (cols.highlight || cols.accent);
     ctx.shadowBlur = 14;
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(win ? 'You Win!' : 'You Lose!', x + w / 2, y + h / 2);
@@ -182,11 +182,11 @@ class PowerMeter {
     ctx.strokeRect(x, y, w, h);
 
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('POWER METER', x + w / 2, y + 30);
 
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.fillStyle = cols.text + '88';
     ctx.fillText('Click when the bar is in the green zone!', x + w / 2, y + 50);
 
@@ -265,7 +265,7 @@ class PowerMeter {
     ctx.stroke();
 
     ctx.fillStyle = cols.accent;
-    ctx.font = 'bold 13px monospace';
+    ctx.font = 'bold 13px "Pixelify Sans", sans-serif';
     ctx.fillText('Score: ' + Math.round(this.score) + ' | Attempt ' + this.attempts + '/' + this.maxAttempts, x + w / 2, panelY + 20);
 
     const dotR = 5;

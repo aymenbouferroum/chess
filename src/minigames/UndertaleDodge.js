@@ -220,7 +220,7 @@ class UndertaleDodge {
     ctx.strokeRect(x, y, w, h);
 
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('SOUL DODGE', x + w / 2, y + 30);
 
@@ -233,12 +233,12 @@ class UndertaleDodge {
     ctx.fillStyle = hpPct > 0.5 ? cols.accent : hpPct > 0.25 ? (cols.highlight || cols.accent) : (cols.highlight || cols.text);
     ctx.fillRect(x + w / 2 - hpBarW / 2, y + 45, hpBarW * hpPct, hpBarH);
     ctx.fillStyle = cols.text;
-    ctx.font = '12px monospace';
+    ctx.font = '12px "Pixelify Sans", sans-serif';
     ctx.fillText('HP: ' + this.hp + '/' + this.maxHp, x + w / 2, y + 55);
 
     // Timer
     ctx.fillStyle = cols.text + '88';
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.fillText('Survive: ' + Math.ceil(this.timeLeft) + 's', x + w / 2, y + 75);
 
     // Arena
@@ -305,7 +305,7 @@ class UndertaleDodge {
 
     // Controls hint
     ctx.fillStyle = cols.text + '44';
-    ctx.font = '12px monospace';
+    ctx.font = '12px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Arrow keys / WASD to dodge', x + w / 2, y + 320);
 
@@ -316,7 +316,7 @@ class UndertaleDodge {
       ctx.fillStyle = cols.text;
       ctx.shadowColor = win ? cols.accent : (cols.highlight || cols.accent);
       ctx.shadowBlur = 14;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       ctx.fillText(win ? 'You Win!' : 'You Lose!', x + w / 2, y + h / 2);
       ctx.shadowBlur = 0;
     }

@@ -86,18 +86,34 @@ app.whenReady().then(() => {
     if (fs.existsSync(allTrigger)) {
       try { fs.unlinkSync(allTrigger); } catch (_) {}
       if (!win || win.isDestroyed()) return;
-      const screens = [
-        { name: 'home_screen', switch: null, delay: 2000 },
-        { name: 'settings', switch: "switchScreen('settings')", delay: 1500 },
-        { name: 'stats', switch: "switchScreen('stats')", delay: 1500 },
-        { name: 'bot_select', switch: "switchScreen('botSelect')", delay: 1500 },
-        { name: 'custom_game', switch: "switchScreen('customGame')", delay: 1500 },
-        { name: 'how_to_play', switch: "switchScreen('howToPlay')", delay: 1500 },
-        { name: 'home_screen_final', switch: "switchScreen('home')", delay: 1500 },
-      ];
+        const screens = [
+          { name: 'home_screen', switch: null, delay: 2000 },
+          { name: 'story_save', switch: "switchScreen('characterSelect')", delay: 1500 },
+          { name: 'settings', switch: "switchScreen('settings')", delay: 1500 },
+          { name: 'stats', switch: "switchScreen('stats')", delay: 1500 },
+          { name: 'theme_select', switch: "switchScreen('themeSelect')", delay: 1500 },
+          { name: 'bot_select', switch: "switchScreen('botSelect')", delay: 1500 },
+          { name: 'custom_game', switch: "switchScreen('customGame')", delay: 1500 },
+          { name: 'controls', switch: "switchScreen('controls')", delay: 1500 },
+          { name: 'mini_game_practice', switch: "switchScreen('miniGamePractice')", delay: 1500 },
+          { name: 'how_to_play', switch: "switchScreen('howToPlay')", delay: 1500 },
+          { name: 'game_screen', switch: "store.set('mode','1v1'); store.set('miniGamesEnabled', false); switchScreen('game', { mode: '1v1' })", delay: 1800 },
+          { name: 'home_screen_final', switch: "switchScreen('home')", delay: 1500 },
+        ];
       (async () => {
+        const waitForTransitionIdle = async () => {
+          for (let i = 0; i < 60; i++) {
+            const idle = await win.webContents.executeJavaScript("typeof transition === 'undefined' || !transition.active");
+            if (idle) return;
+            await new Promise(r => setTimeout(r, 100));
+          }
+        };
         for (const s of screens) {
-          if (s.switch) await win.webContents.executeJavaScript(s.switch);
+          await waitForTransitionIdle();
+          if (s.switch) {
+            await win.webContents.executeJavaScript(s.switch);
+            await waitForTransitionIdle();
+          }
           await new Promise(r => setTimeout(r, s.delay));
           const img = await win.webContents.capturePage();
           if (!fs.existsSync(screenshotsDir)) fs.mkdirSync(screenshotsDir, { recursive: true });

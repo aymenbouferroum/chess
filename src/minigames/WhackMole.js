@@ -231,7 +231,7 @@ class WhackMole {
           ctx.beginPath();
           ctx.arc(moleX, moleY, moleW / 2, 0, Math.PI * 2);
           ctx.fill();
-          ctx.font = 'bold 14px monospace';
+          ctx.font = 'bold 14px "Pixelify Sans", sans-serif';
           ctx.fillStyle = cell.type === 'gold' ? (cols.highlight || cols.accent) : cols.accent;
           ctx.textAlign = 'center';
           ctx.fillText(cell.type === 'gold' ? '+2' : '+1', moleX, moleY + 5);
@@ -275,7 +275,7 @@ class WhackMole {
 
           if (cell.type === 'gold') {
             ctx.fillStyle = cols.highlight || cols.accent;
-            ctx.font = 'bold 11px monospace';
+            ctx.font = 'bold 11px "Pixelify Sans", sans-serif';
             ctx.textAlign = 'center';
             ctx.shadowColor = cols.highlight || cols.accent;
             ctx.shadowBlur = 6;
@@ -315,7 +315,7 @@ class WhackMole {
     ctx.fillRect(x, barY, w, barH);
 
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 13px monospace';
+    ctx.font = 'bold 13px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText('Hits: ' + this.score + '/' + this.target, x + 8, barY + 13);
 
@@ -345,7 +345,7 @@ class WhackMole {
       ctx.fillStyle = cols.text;
       ctx.shadowColor = win ? cols.accent : (cols.highlight || cols.accent);
       ctx.shadowBlur = 14;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(win ? 'You Win!' : 'You Lose!', x + w / 2, y + h / 2);
       ctx.shadowBlur = 0;

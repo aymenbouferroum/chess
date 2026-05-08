@@ -7,7 +7,7 @@ const PixiBoardRenderer = {
   pieceSprites: {},
   squareSize: 80,
   boardOffsetX: 320,
-  boardOffsetY: 80,
+  boardOffsetY: 58,
   flashGraphics: null,
   selectedSprite: null,
 
@@ -48,14 +48,23 @@ const PixiBoardRenderer = {
 
     // --- Board frame ---
     const frame = new PIXI.Graphics();
+    const accentNum = PixiColorUtil.hexToNum(cols.accent);
+    const panelNum = PixiColorUtil.hexToNum(cols.panel);
 
-    // Outer shadow
-    frame.roundRect(bx - fp - 4, by - fp - 4, boardPx + fp * 2 + 8, boardPx + fp * 2 + 8, 4)
-      .fill({ color: 0x000000, alpha: 0.5 });
+    // Premium board stage: shadow, glassy plate, and restrained accent rails.
+    frame.roundRect(bx - 18, by - 18, boardPx + 36, boardPx + 36, 10)
+      .fill({ color: 0x000000, alpha: 0.46 });
+    frame.roundRect(bx - 14, by - 14, boardPx + 28, boardPx + 28, 9)
+      .fill({ color: panelNum, alpha: 0.80 })
+      .stroke({ color: accentNum, alpha: 0.28, width: 2 });
+    frame.roundRect(bx - 8, by - 8, boardPx + 16, boardPx + 16, 6)
+      .fill({ color: 0x050914, alpha: 0.72 });
+    frame.rect(bx - 6, by - 15, boardPx + 12, 4).fill({ color: accentNum, alpha: 0.55 });
+    frame.rect(bx - 6, by + boardPx + 11, boardPx + 12, 4).fill({ color: accentNum, alpha: 0.28 });
 
     // Frame background (dark wood-like)
     const frameDark = PixiColorUtil.hexToNum(PixiColorUtil.darken(cols.darkSquare, 40));
-    frame.roundRect(bx - fp, by - fp, boardPx + fp * 2, boardPx + fp * 2, 3)
+    frame.roundRect(bx - fp, by - fp, boardPx + fp * 2, boardPx + fp * 2, 5)
       .fill(frameDark);
 
     // Inner frame border highlight
@@ -96,6 +105,8 @@ const PixiBoardRenderer = {
         const y = by + row * this.squareSize;
 
         boardGfx.rect(x, y, this.squareSize, this.squareSize).fill(PixiColorUtil.hexToNum(color));
+        boardGfx.rect(x + 6, y + 6, this.squareSize - 12, this.squareSize - 12)
+          .stroke({ color: isLight ? 0xffffff : 0x000000, alpha: isLight ? 0.035 : 0.05, width: 1 });
 
         if (!isLight) {
           boardGfx.rect(x, y, this.squareSize, 1).fill({ color: 0x000000, alpha: 0.08 });

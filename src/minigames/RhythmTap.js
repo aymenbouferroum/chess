@@ -132,7 +132,7 @@ class RhythmTap {
     ctx.shadowColor = win ? cols.accent : (cols.highlight || cols.accent);
     ctx.shadowBlur = 14;
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(win ? 'You Win!' : 'You Lose!', x + w / 2, y + h / 2);
@@ -148,10 +148,10 @@ class RhythmTap {
     ctx.strokeRect(x, y, w, h);
 
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('RHYTHM TAP', x + w / 2, y + 30);
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.fillStyle = cols.text + '88';
     ctx.fillText('Tap when the blocks reach the green zone!', x + w / 2, y + 50);
 
@@ -207,7 +207,7 @@ class RhythmTap {
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.fillStyle = f.accuracy > 0 ? cols.accent : (cols.highlight || cols.text);
-      ctx.font = 'bold 13px monospace';
+      ctx.font = 'bold 13px "Pixelify Sans", sans-serif';
       ctx.shadowColor = ctx.fillStyle;
       ctx.shadowBlur = 8;
       ctx.fillText(f.text, x + w / 2, trackY - 18 + f.y);
@@ -219,17 +219,17 @@ class RhythmTap {
     ctx.fillStyle = cols.panel + 'dd';
     ctx.fill();
     ctx.fillStyle = cols.accent;
-    ctx.font = 'bold 13px monospace';
+    ctx.font = 'bold 13px "Pixelify Sans", sans-serif';
     ctx.fillText('Score: ' + this.score + ' | Time: ' + Math.ceil(this.timeLeft) + 's', x + w / 2, trackY + 68);
 
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 13px monospace';
+    ctx.font = 'bold 13px "Pixelify Sans", sans-serif';
     ctx.fillText('Combo: ' + this.combo, x + w / 2, trackY + 88);
 
     if (this.combo > 2) {
       ctx.save();
       ctx.fillStyle = cols.highlight || cols.accent;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       ctx.shadowColor = ctx.fillStyle;
       ctx.shadowBlur = 12;
       ctx.fillText(this.combo + 'x', x + w / 2, trackY + 128);

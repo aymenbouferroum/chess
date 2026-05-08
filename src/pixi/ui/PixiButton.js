@@ -30,7 +30,7 @@ class PixiButton extends PIXI.Container {
     this._label = new PIXI.Text({
       text: this.config.text,
       style: {
-        fontFamily: 'monospace',
+        fontFamily: PixiTextStyles.FONT_BODY,
         fontSize: this.config.fontSize,
         fontWeight: 'bold',
         fill: this.config.cols ? this.config.cols.text : '#ffffff',

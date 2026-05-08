@@ -9,13 +9,14 @@ const HomeScreen = {
 
   LAYOUT: {
     W: 1280, H: 800,
-    LOGO_Y: 218,
-    LOGO_MAX_W: 480,
-    MAIN_START_Y: 350,
-    MAIN_BTN_W: 460,
-    MAIN_BTN_H: 62,
-    MAIN_BTN_GAP: 8,
-    UTIL_Y: 647,
+    LOGO_Y: 176,
+    LOGO_MAX_W: 610,
+    HERO_Y: 220,
+    MAIN_START_Y: 388,
+    MAIN_BTN_W: 500,
+    MAIN_BTN_H: 58,
+    MAIN_BTN_GAP: 7,
+    UTIL_Y: 674,
     UTIL_BTN_W: 190,
     UTIL_BTN_H: 44,
     UTIL_GAP: 14,
@@ -52,6 +53,18 @@ const HomeScreen = {
     const vignette = new PIXI.Graphics();
     vignette.rect(0, 0, L.W, L.H).fill({ color: 0x000000, alpha: 0.3 });
     this.pixiContainer.addChild(vignette);
+
+    // --- Premium animated title aura ---
+    const heroContainer = new PIXI.Container();
+    heroContainer.x = L.W / 2;
+    heroContainer.y = L.HERO_Y;
+    heroContainer.label = 'premiumHero';
+    const heroAura = new PIXI.Graphics();
+    heroAura.ellipse(0, 28, 500, 124).fill({ color: PixiColorUtil.hexToNum(cols.accent), alpha: 0.065 });
+    heroAura.ellipse(0, 42, 390, 74).stroke({ color: PixiColorUtil.hexToNum(cols.text), alpha: 0.075, width: 4 });
+    heroContainer.addChild(heroAura);
+    this.pixiContainer.addChild(heroContainer);
+    this._heroContainer = heroContainer;
 
     // --- Floating particles ---
     this._particles = [];
@@ -118,7 +131,7 @@ const HomeScreen = {
       style: {
         fontFamily: PixiTextStyles.FONT_TITLE,
         fontSize: 64, fontWeight: 'bold',
-        fill: cols.text, letterSpacing: 8, padding: 30,
+        fill: cols.text, letterSpacing: 0, padding: 30,
         stroke: { color: '#000000', width: 4 },
         dropShadow: { color: cols.accent, blur: 6, distance: 0, alpha: 0.4 },
       },
@@ -196,6 +209,12 @@ const HomeScreen = {
         if (glowChild) glowChild.alpha = 0.15 + Math.sin(this._titlePulse * 0.8) * 0.08;
       }
 
+      if (this._heroContainer) {
+        this._heroContainer.y = L.HERO_Y + Math.sin(this._titlePulse * 0.55) * 5;
+        this._heroContainer.scale.set(1 + Math.sin(this._titlePulse * 0.35) * 0.006);
+        this._heroContainer.alpha = 0.88 + Math.sin(this._titlePulse * 0.7) * 0.05;
+      }
+
       // Animated accent lines below logo
       const dg = this._decoLines;
       dg.clear();
@@ -256,7 +275,7 @@ const HomeScreen = {
         fontSize: 20,
         fontWeight: 'bold',
         fill: cols.text,
-        letterSpacing: 2,
+        letterSpacing: 0,
       },
     });
     titleText.anchor.set(0.5);
@@ -274,7 +293,7 @@ const HomeScreen = {
           fontFamily: PixiTextStyles.FONT_BODY,
           fontSize: 14,
           fill: PixiColorUtil.alpha(cols.text, '77'),
-          letterSpacing: 1,
+          letterSpacing: 0,
         },
       });
       subText.anchor.set(0.5);
@@ -379,7 +398,7 @@ const HomeScreen = {
         fontSize: 16,
         fontWeight: 'bold',
         fill: cols.text,
-        letterSpacing: 1,
+        letterSpacing: 0,
       },
     });
     label.anchor.set(0.5);
@@ -506,6 +525,7 @@ const HomeScreen = {
     this._particles = [];
     this._btnContainers = [];
     this._titleContainer = null;
+    this._heroContainer = null;
   },
 
   handleKeyDown(e) {

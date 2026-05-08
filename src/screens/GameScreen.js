@@ -89,12 +89,18 @@ const GameScreen = {
       PixiGameScreen.init();
       PixiGameScreen.renderBoard(this.board, store.get('theme') || 'space');
     }
+    if (typeof PixiGameHud !== 'undefined') {
+      PixiGameHud.init();
+    }
   },
 
   destroy() {
     audioManager.stopMusic();
     if (typeof PixiGameScreen !== 'undefined') {
       PixiGameScreen.destroy();
+    }
+    if (typeof PixiGameHud !== 'undefined') {
+      PixiGameHud.destroy();
     }
   },
 
@@ -184,9 +190,13 @@ const GameScreen = {
       });
     }
 
-    this.renderSidePanel(ctx, cols, 'left', 'white');
-    this.renderSidePanel(ctx, cols, 'right', 'black');
-    this.renderStatusBar(ctx, cols);
+    if (typeof PixiGameHud !== 'undefined' && PixiGameHud.initialized) {
+      PixiGameHud.update(this);
+    } else {
+      this.renderSidePanel(ctx, cols, 'left', 'white');
+      this.renderSidePanel(ctx, cols, 'right', 'black');
+      this.renderStatusBar(ctx, cols);
+    }
 
     // Game over overlay
     if (this.gameOver) {
@@ -201,7 +211,7 @@ const GameScreen = {
         UIHelpers.drawIcon(ctx, 636, 260, 'crown', 12, cols, { color: this.gameResult === 'white' ? cols.lightPiece : cols.darkPiece });
       }
       ctx.fillStyle = cols.text;
-      ctx.font = 'bold 36px monospace';
+      ctx.font = 'bold 36px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       let msg = '';
       if (this.gameResult === 'white') msg = 'White Wins!';
@@ -210,7 +220,7 @@ const GameScreen = {
       ctx.fillText(msg, 640, 280);
 
       ctx.fillStyle = cols.text + 'aa';
-      ctx.font = '14px monospace';
+      ctx.font = '14px "Pixelify Sans", sans-serif';
       let reason = '';
       if (this.gameStatus === 'checkmate') reason = 'by Checkmate';
       else if (this.gameStatus === 'stalemate') reason = 'by Stalemate';
@@ -220,7 +230,7 @@ const GameScreen = {
 
       if (this.gameResult && this.currentCharacter) {
         ctx.fillStyle = cols.text + 'aa';
-        ctx.font = '16px monospace';
+        ctx.font = '16px "Pixelify Sans", sans-serif';
         ctx.textAlign = 'left';
         const dlg = this.gameResult === 'white'
           ? this.currentCharacter.dialogue.after
@@ -237,7 +247,7 @@ const GameScreen = {
       }
       for (const btn of buttons) {
         const isHover = this.hoveredGameOverBtn === btn.action;
-        UIHelpers.drawButton(ctx, btn.x - 80, btn.y, 160, 40, btn.text, cols, { font: 'bold 14px monospace', hover: isHover });
+        UIHelpers.drawButton(ctx, btn.x - 80, btn.y, 160, 40, btn.text, cols, { font: 'bold 14px "Pixelify Sans", sans-serif', hover: isHover });
         btn._bounds = { x: btn.x - 80, y: btn.y, w: 160, h: 40 };
       }
       ctx.globalAlpha = 1;
@@ -247,7 +257,7 @@ const GameScreen = {
     if (this.aiThinking) {
       UIHelpers.drawIcon(ctx, 580, 20, 'hourglass', 10, cols, { color: cols.text + '88' });
       ctx.fillStyle = cols.text + '88';
-      ctx.font = '14px monospace';
+      ctx.font = '14px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       const dots = '.'.repeat(Math.floor(Date.now() / 500) % 4);
       ctx.fillText('Opponent is thinking' + dots, 640, 30);
@@ -267,7 +277,7 @@ const GameScreen = {
       UIHelpers.drawPanel(ctx, startX - 20, startY - 40, totalW + 40, sqSize + 60, cols, { accentTop: true });
 
       ctx.fillStyle = cols.text;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('PROMOTE TO:', 640, startY - 10);
 
@@ -291,7 +301,7 @@ const GameScreen = {
         const alpha = Math.min(1, this.comboDisplayTimer);
         const bounce = Math.sin(this.comboDisplayTimer * 10) * 5;
         ctx.fillStyle = `rgba(255,200,50,${alpha})`;
-        ctx.font = 'bold 24px monospace';
+        ctx.font = 'bold 24px "Pixelify Sans", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(this.captureCombo + 'x COMBO!', 640, 80 + bounce);
       }
@@ -331,7 +341,7 @@ const GameScreen = {
     // Player name
     let cy = y + pad + 4;
     ctx.fillStyle = isPlayerTurn && !this.gameOver ? cols.accent : cols.text;
-    ctx.font = 'bold 16px "VT323", monospace';
+    ctx.font = 'bold 16px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText(UIHelpers.truncateText(ctx, playerName, w - pad * 2), x + pad, cy);
     cy += 6;
@@ -347,7 +357,7 @@ const GameScreen = {
     // Turn label next to indicator
     if (isPlayerTurn && !this.gameOver) {
       ctx.fillStyle = cols.accent + 'cc';
-      ctx.font = '14px "VT323", monospace';
+      ctx.font = '14px "Pixelify Sans", sans-serif';
       ctx.fillText('YOUR TURN', x + pad + 24, cy + 14);
     }
     cy += 28;
@@ -363,18 +373,18 @@ const GameScreen = {
     const pieceSymbols = { pawn: '♟', knight: '♞', bishop: '♝', rook: '♜', queen: '♛', king: '♚' };
 
     ctx.fillStyle = cols.text + '88';
-    ctx.font = '14px "VT323", monospace';
+    ctx.font = '14px "Pixelify Sans", sans-serif';
     ctx.fillText('CAPTURED', x + pad, cy);
     cy += 8;
 
     if (captured.length === 0) {
       ctx.fillStyle = cols.text + '33';
-      ctx.font = '14px "VT323", monospace';
+      ctx.font = '14px "Pixelify Sans", sans-serif';
       ctx.fillText('None yet', x + pad, cy + 8);
       cy += 20;
     } else {
       let px = x + pad;
-      ctx.font = '18px "VT323", monospace';
+      ctx.font = '18px "Pixelify Sans", sans-serif';
       for (const p of captured.slice(0, 20)) {
         ctx.fillStyle = p.color === 'white' ? '#e8e0d0' : '#888';
         ctx.fillText(pieceSymbols[p.type] || '?', px, cy + 10);
@@ -396,11 +406,11 @@ const GameScreen = {
       const advantage = isWhiteSide ? whiteAdvantage : -whiteAdvantage;
       if (advantage > 0) {
         ctx.fillStyle = '#44dd44';
-        ctx.font = 'bold 16px "VT323", monospace';
+        ctx.font = 'bold 16px "Pixelify Sans", sans-serif';
         ctx.fillText('+' + advantage + ' material', x + pad, cy);
       } else if (advantage < 0) {
         ctx.fillStyle = '#dd4444';
-        ctx.font = 'bold 16px "VT323", monospace';
+        ctx.font = 'bold 16px "Pixelify Sans", sans-serif';
         ctx.fillText(advantage + ' material', x + pad, cy);
       }
       cy += 18;
@@ -415,11 +425,11 @@ const GameScreen = {
     // Story mode character info
     if (this.mode === 'story' && color === 'black' && this.currentCharacter) {
       ctx.fillStyle = this.currentCharacter.colors.primary;
-      ctx.font = 'bold 16px "VT323", monospace';
+      ctx.font = 'bold 16px "Pixelify Sans", sans-serif';
       ctx.fillText(UIHelpers.truncateText(ctx, this.currentCharacter.name, w - pad * 2), x + pad, cy);
       cy += 4;
       ctx.fillStyle = cols.text + '66';
-      ctx.font = '14px "VT323", monospace';
+      ctx.font = '14px "Pixelify Sans", sans-serif';
       ctx.fillText('Level ' + this.currentCharacter.level, x + pad, cy + 8);
       cy += 20;
     }
@@ -427,12 +437,12 @@ const GameScreen = {
     // Move history (left panel only)
     if (isLeft && this.moveHistory.length > 0) {
       ctx.fillStyle = cols.text + '66';
-      ctx.font = '14px "VT323", monospace';
+      ctx.font = '14px "Pixelify Sans", sans-serif';
       ctx.fillText('MOVE HISTORY', x + pad, cy);
       cy += 8;
 
       ctx.fillStyle = cols.text + '88';
-      ctx.font = '16px "VT323", monospace';
+      ctx.font = '16px "Pixelify Sans", sans-serif';
       const files = 'abcdefgh';
       const recentMoves = this.moveHistory.slice(-10);
       for (let i = 0; i < recentMoves.length; i++) {
@@ -475,15 +485,15 @@ const GameScreen = {
     ctx.restore();
 
     ctx.fillStyle = cols.text;
-    ctx.font = '18px "VT323", monospace';
+    ctx.font = '18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     const turnText = this.turn === 'white' ? "White's Turn" : "Black's Turn";
     if (this.gameStatus === 'check') {
       ctx.fillStyle = cols.checkHighlight || cols.accent;
-      ctx.font = 'bold 12px "Press Start 2P", monospace';
+      ctx.font = 'bold 12px "Silkscreen", monospace';
       ctx.fillText('CHECK!', 640, y + 18);
       ctx.fillStyle = cols.text + '88';
-      ctx.font = '14px "VT323", monospace';
+      ctx.font = '14px "Pixelify Sans", sans-serif';
       ctx.fillText(turnText, 640, y + 32);
     } else {
       ctx.fillText(turnText, 640, y + 22);
@@ -496,7 +506,7 @@ const GameScreen = {
 
     // Back button
     ctx.fillStyle = navEnabled && this.reviewingAt !== 0 ? cols.text : cols.text + '22';
-    ctx.font = 'bold 16px monospace';
+    ctx.font = 'bold 16px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText('◀', 210, navY + 18);
 
@@ -506,23 +516,23 @@ const GameScreen = {
 
     // Live button
     ctx.fillStyle = isReviewing ? cols.accent : cols.text + '22';
-    ctx.font = '9px monospace';
+    ctx.font = '9px "Pixelify Sans", sans-serif';
     ctx.fillText('LIVE', 248, navY + 18);
 
     ctx.fillStyle = cols.text + '66';
-    ctx.font = '10px monospace';
+    ctx.font = '10px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'right';
     const snapIdx = isReviewing ? (this.reviewingAt + 1) : this.boardSnapshots.length;
     ctx.fillText('Move #' + snapIdx, 1060, y + 22);
 
     if (this.lockedTiles.length > 0) {
       ctx.fillStyle = cols.checkHighlight || cols.accent;
-      ctx.font = '10px monospace';
+      ctx.font = '10px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText('Locked: ' + this.lockedTiles.length, 320, y + 22);
     }
     ctx.fillStyle = cols.text + '44';
-    ctx.font = '10px monospace';
+    ctx.font = '10px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('ESC: Pause', 640, y + 32);
   },
@@ -554,13 +564,16 @@ const GameScreen = {
 
     // Game over buttons
     if (this.gameOver) {
-      for (const btn of [
-        { text: 'Play Again', action: 'rematch', bx: 440, by: 460 },
-        { text: 'Menu', action: 'menu', bx: 640, by: 460 },
-        { text: 'Themes', action: 'themes', bx: 840, by: 460 },
-        { text: 'Next Level', action: 'next', bx: 540, by: 520 },
-      ]) {
-        if (x >= btn.bx && x <= btn.bx + 160 && y >= btn.by && y <= btn.by + 40) {
+      const buttons = [
+        { action: 'rematch', x: 360, y: 460, w: 160, h: 40 },
+        { action: 'menu', x: 560, y: 460, w: 160, h: 40 },
+        { action: 'themes', x: 760, y: 460, w: 160, h: 40 },
+      ];
+      if (this.mode === 'story' && this.gameResult === 'white') {
+        buttons.push({ action: 'next', x: 460, y: 520, w: 160, h: 40 });
+      }
+      for (const btn of buttons) {
+        if (x >= btn.x && x <= btn.x + btn.w && y >= btn.y && y <= btn.y + btn.h) {
           this.handleGameOverAction(btn.action);
           return;
         }
@@ -569,9 +582,9 @@ const GameScreen = {
     }
 
     // Move navigation buttons in status bar
-    const navY = 745 + 5;
-    if (y >= navY && y <= navY + 25) {
-      if (x >= 208 && x <= 222) {
+    const navY = 724 + 16;
+    if (y >= navY && y <= navY + 28) {
+      if (x >= 390 && x <= 418) {
         // Back
         if (this.reviewingAt !== 0 && this.boardSnapshots.length > 1) {
           const idx = this.reviewingAt === null ? this.boardSnapshots.length - 2 : this.reviewingAt - 1;
@@ -579,14 +592,14 @@ const GameScreen = {
         }
         return;
       }
-      if (x >= 226 && x <= 240) {
+      if (x >= 426 && x <= 454) {
         // Forward
         if (this.reviewingAt !== null && this.reviewingAt < this.boardSnapshots.length - 1) {
           this.goToMove(this.reviewingAt + 1);
         }
         return;
       }
-      if (x >= 244 && x <= 275) {
+      if (x >= 472 && x <= 520) {
         // Live
         this.goToLive();
         return;
@@ -690,6 +703,10 @@ const GameScreen = {
       return;
     }
 
+    let boardPos = null;
+    if (typeof PixiGameScreen !== 'undefined' && PixiGameScreen.initialized) {
+      boardPos = PixiGameScreen.getSquareAt(x, y);
+    }
     if (boardPos && !this.aiThinking && this.reviewingAt === null) {
       const piece = this.board.grid[boardPos.row][boardPos.col];
       const isLegalTarget = this.legalMoves.some(m => m.to.row === boardPos.row && m.to.col === boardPos.col);

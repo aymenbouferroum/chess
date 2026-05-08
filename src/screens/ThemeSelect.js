@@ -1,342 +1,238 @@
 const ThemeSelect = {
+  isPixiScreen: true,
+  pixiContainer: null,
   themes: [],
-  hoveredIndex: -1,
   returnScreen: 'home',
+  selectedThemeId: null,
 
   init(data) {
     this.themes = ThemeManager.getAllThemes();
-    this.hoveredIndex = -1;
     this.returnScreen = data?.returnTo || 'home';
+    this.selectedThemeId = store.get('theme') || 'space';
+    this.build();
   },
 
-  destroy() {},
+  destroy() {
+    PixiPremiumScene.destroy(this);
+  },
 
-  render(ctx, dt) {
-    const theme = ThemeManager.getTheme(store.get('theme'));
-    const cols = theme.colors;
+  pixiUpdate(dt) {
+    PixiPremiumScene.update(this.pixiContainer, dt);
+  },
 
-    // Background - animated theme
-    const usePixiBg = typeof PixiMenuBackground !== 'undefined' && PixiMenuBackground.initialized;
-    if (usePixiBg) {
-      ctx.clearRect(0, 0, 1280, 800);
-    } else if (typeof backgroundRenderer !== 'undefined') {
-      backgroundRenderer.render(ctx, dt);
-    } else {
-      ctx.fillStyle = cols.background;
-      ctx.fillRect(0, 0, 1280, 800);
-    }
-    
+  build() {
+    if (this.pixiContainer) this.pixiContainer.destroy({ children: true });
+    this.pixiContainer = PixiPremiumScene.root('Theme Select', 'Gallery on the left, custom editor on the right', { footerHint: 'Locked themes unlock through story progress' });
+    PixiScreenManager.setScreenContainer(this.pixiContainer);
+    this.buildGallery();
+    this.buildDrawer();
+    PixiPremiumScene.button(this.pixiContainer, 36, 718, 160, 44, 'Back', () => switchScreen(this.returnScreen), { icon: 'back' });
+  },
 
-    ctx.fillStyle = cols.text;
-    ctx.font = 'bold 28px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('SELECT THEME', 640, 60);
-    ctx.font = '12px monospace';
-    ctx.fillStyle = cols.text + '88';
-    ctx.fillText('Choose your visual style', 640, 85);
-
-    UIHelpers.drawSeparator(ctx, 400, 95, 480, cols);
-
-    const cardW = 220;
-    const cardH = 130;
-    const gapX = 30;
-    const gapY = 25;
-    const perRow = 4;
-    const totalGridW = perRow * cardW + (perRow - 1) * gapX;
-    const startX = (1280 - totalGridW) / 2;
-    const startY = 120;
-
-    for (let i = 0; i < this.themes.length; i++) {
-      const t = this.themes[i];
-      const row = Math.floor(i / perRow);
-      const col = i % perRow;
-      const x = startX + col * (cardW + gapX);
-      const y = startY + row * (cardH + gapY);
-      const isHover = i === this.hoveredIndex;
-      const isActive = t.id === store.get('theme');
-      const unlocked = ThemeManager.isThemeUnlocked(t.id);
-
-      UIHelpers.drawPixelFrame(ctx, x, y, cardW, cardH, t.colors, {
-        hover: isHover && unlocked,
-        active: isActive,
+  buildGallery() {
+    const cardW = 246;
+    const cardH = 118;
+    const gap = 18;
+    const startX = 66;
+    const startY = 134;
+    this.themes.forEach((theme, i) => {
+      const row = Math.floor(i / 3);
+      const col = i % 3;
+      const x = startX + col * (cardW + gap);
+      const y = startY + row * (cardH + gap);
+      const unlocked = ThemeManager.isThemeUnlocked(theme.id);
+      const active = store.get('theme') === theme.id;
+      PixiPremiumScene.card(this.pixiContainer, x, y, cardW, cardH, {
+        active,
         disabled: !unlocked,
-        fill: isHover && unlocked ? t.colors.buttonHover : t.colors.panel,
-      });
+        activeColor: theme.colors.accent,
+        onClick: () => this.selectTheme(theme.id, unlocked),
+        draw: (card) => {
+          const preview = new PIXI.Sprite(PixiPremiumAssets.theme(theme.id));
+          preview.width = cardW - 18;
+          preview.height = cardH - 18;
+          preview.x = 9;
+          preview.y = 9;
+          preview.alpha = unlocked ? 0.86 : 0.28;
+          card.addChild(preview);
 
-      if (unlocked) {
-        // Color preview swatches
-        const swatchSize = 16;
-        const swatches = [t.colors.lightSquare, t.colors.darkSquare, t.colors.lightPiece, t.colors.darkPiece, t.colors.accent];
-        for (let s = 0; s < swatches.length; s++) {
-          ctx.fillStyle = swatches[s];
-          ctx.fillRect(x + 10 + s * (swatchSize + 4), y + 15, swatchSize, swatchSize);
-        }
+          const shade = new PIXI.Graphics().roundRect(9, 62, cardW - 18, 47, 6).fill({ color: 0x020812, alpha: 0.68 });
+          card.addChild(shade);
 
-        // Theme name
-        ctx.fillStyle = t.colors.text;
-        ctx.font = '16px monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(UIHelpers.truncateText(ctx, t.name, cardW - 20), x + 10, y + 52);
-
-        // Description
-        ctx.fillStyle = t.colors.text + '77';
-        ctx.font = '12px monospace';
-        ctx.fillText(UIHelpers.truncateText(ctx, t.desc, cardW - 20), x + 10, y + 72);
-
-        // Active indicator
-        if (isActive) {
-          ctx.fillStyle = t.colors.accent;
-          ctx.font = 'bold 12px monospace';
-          ctx.textAlign = 'left';
-          ctx.fillText('ACTIVE', x + 10, y + 97);
-        }
-
-        // Hover background preview
-        if (isHover) {
-          ctx.fillStyle = t.colors.background + '44';
-          ctx.fillRect(x + cardW - 65, y + 70, 52, 52);
-          const ps = 12;
-          for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
-              ctx.fillStyle = (r + c) % 2 === 0 ? t.colors.lightSquare : t.colors.darkSquare;
-              ctx.fillRect(x + cardW - 63 + c * ps, y + 72 + r * ps, ps, ps);
-            }
+          if (!unlocked) {
+            const lock = new PIXI.Sprite(PixiPremiumAssets.icon('lock'));
+            lock.width = 42;
+            lock.height = 42;
+            lock.x = cardW / 2 - 21;
+            lock.y = 30;
+            card.addChild(lock);
           }
-        }
-      } else {
-        // Locked overlay
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.fillRect(x, y, cardW, cardH);
-        UIHelpers.drawIcon(ctx, x + cardW / 2 - 5, y + cardH / 2 - 10, 'lock', 10, cols, { color: '#ff4444' });
-        ctx.fillStyle = cols.text + '88';
-        ctx.font = '10px monospace';
-        ctx.fillText('LOCKED', x + cardW / 2, y + cardH / 2 + 24);
-        ctx.fillStyle = cols.text + '55';
-        ctx.font = '9px monospace';
-        const reqs = { egypt: 'Lv 2', cyberpunk: 'Lv 4', japanese: 'Lv 5', artdeco: 'Lv 6', wildwest: 'Lv 7', prehistoric: 'Lv 8', steampunk: 'Lv 9' };
-        if (reqs[t.id]) ctx.fillText('Story ' + reqs[t.id], x + cardW / 2, y + cardH / 2 + 38);
-      }
-    }
 
-    // Custom theme editor
-    const customIdx = this.themes.findIndex(t => t.id === 'custom');
-    const isCustomActive = customIdx !== -1 && (this.hoveredIndex === customIdx || store.get('theme') === 'custom');
-    if (isCustomActive) {
-      const editorY = 500;
-      const editorH = 230;
-      UIHelpers.drawPanel(ctx, startX, editorY, totalGridW, editorH, cols, { accentTop: true });
+          const name = PixiPremiumScene.text(unlocked ? theme.name : 'Locked Theme', {
+            fontSize: 18,
+            fontWeight: '900',
+            fill: unlocked ? theme.colors.text : PixiPremiumScene.alpha(ThemeManager.getCurrentColors().text, '88'),
+          });
+          name.x = 20;
+          name.y = 68;
+          PixiPremiumScene.fit(name, 190, 0.56);
+          card.addChild(name);
 
-      ctx.fillStyle = cols.text;
-      ctx.font = 'bold 14px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('CLICK A SWATCH TO CYCLE COLOR', startX + totalGridW / 2, editorY + 30);
+          const desc = PixiPremiumScene.text(unlocked ? theme.desc : this.unlockLabel(theme.id), {
+            fontSize: 13,
+            fill: unlocked ? PixiColorUtil.alpha(theme.colors.text, 'aa') : PixiPremiumScene.alpha(ThemeManager.getCurrentColors().text, '66'),
+          });
+          desc.x = 20;
+          desc.y = 92;
+          PixiPremiumScene.fit(desc, 196, 0.5);
+          card.addChild(desc);
 
-      const colorKeys = ['lightSquare', 'darkSquare', 'lightPiece', 'darkPiece', 'highlight', 'background', 'panel', 'text', 'accent', 'buttonBg'];
-      const swatchSize = 22;
-      const swatchGap = 8;
-      const colsPerRow = 5;
-      const swatchTotalW = colsPerRow * (swatchSize + swatchGap) - swatchGap;
-      const swatchStartX = startX + (totalGridW - swatchTotalW) / 2;
-      const swatchStartY = editorY + 38;
-
-      for (let i = 0; i < colorKeys.length; i++) {
-        const row = Math.floor(i / colsPerRow);
-        const col = i % colsPerRow;
-        const sx = swatchStartX + col * (swatchSize + swatchGap);
-        const sy = swatchStartY + row * (swatchSize + swatchGap + 12);
-        const key = colorKeys[i];
-        const color = ThemeManager.getTheme('custom').colors[key];
-
-        ctx.fillStyle = color;
-        ctx.fillRect(sx, sy, swatchSize, swatchSize);
-        ctx.strokeStyle = cols.text + '66';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(sx, sy, swatchSize, swatchSize);
-
-        ctx.fillStyle = cols.text + 'aa';
-        ctx.font = '9px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(key, sx + swatchSize / 2, sy + swatchSize + 9);
-      }
-
-      // Music & Background theme pickers
-      const baseThemes = this.themes.filter(t => t.id !== 'custom');
-      const chipW = 68;
-      const chipH = 18;
-      const chipGap = 6;
-      const chipsPerRow = 5;
-      const chipsTotalW = chipsPerRow * (chipW + chipGap) - chipGap;
-      const chipsStartX = startX + (totalGridW - chipsTotalW) / 2;
-
-      // Music theme row
-      ctx.fillStyle = cols.text + 'aa';
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText('Music:', startX + 10, editorY + 120);
-      const musicY = editorY + 144;
-      const currentMusic = store.get('customMusicTheme') || 'space';
-      for (let i = 0; i < baseThemes.length; i++) {
-        const t = baseThemes[i];
-        const row = Math.floor(i / chipsPerRow);
-        const col = i % chipsPerRow;
-        const cx = chipsStartX + col * (chipW + chipGap);
-        const cy = musicY + row * (chipH + 4);
-        const active = t.id === currentMusic;
-        ctx.fillStyle = active ? t.colors.accent : t.colors.panel;
-        ctx.fillRect(cx, cy, chipW, chipH);
-        ctx.strokeStyle = active ? t.colors.text : t.colors.text + '44';
-        ctx.lineWidth = active ? 2 : 1;
-        ctx.strokeRect(cx, cy, chipW, chipH);
-        ctx.fillStyle = active ? '#fff' : t.colors.text;
-        ctx.font = active ? 'bold 9px monospace' : '9px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(t.name.split(' ')[0], cx + chipW / 2, cy + chipH - 5);
-        t._musicBounds = { x: cx, y: cy, w: chipW, h: chipH };
-      }
-
-      // Background theme row
-      ctx.fillStyle = cols.text + 'aa';
-      ctx.font = '10px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText('Background:', startX + 10, editorY + 168);
-      const bgY = editorY + 190;
-      const currentBg = store.get('customBgTheme') || 'space';
-      for (let i = 0; i < baseThemes.length; i++) {
-        const t = baseThemes[i];
-        const row = Math.floor(i / chipsPerRow);
-        const col = i % chipsPerRow;
-        const cx = chipsStartX + col * (chipW + chipGap);
-        const cy = bgY + row * (chipH + 4);
-        const active = t.id === currentBg;
-        ctx.fillStyle = active ? t.colors.accent : t.colors.panel;
-        ctx.fillRect(cx, cy, chipW, chipH);
-        ctx.strokeStyle = active ? t.colors.text : t.colors.text + '44';
-        ctx.lineWidth = active ? 2 : 1;
-        ctx.strokeRect(cx, cy, chipW, chipH);
-        ctx.fillStyle = active ? '#fff' : t.colors.text;
-        ctx.font = active ? 'bold 9px monospace' : '9px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(t.name.split(' ')[0], cx + chipW / 2, cy + chipH - 5);
-        t._bgBounds = { x: cx, y: cy, w: chipW, h: chipH };
-      }
-    }
-
-    UIHelpers.drawButton(ctx, 30, 745, 160, 40, '< Back', cols, { font: 'bold 14px monospace' });
-
-    UIHelpers.drawDitheredRect(ctx, 0, 770, 1280, 30, cols.accent, '11');
+          if (active) {
+            const tag = PixiPremiumScene.text('ACTIVE', { fontSize: 12, fontWeight: '900', fill: theme.colors.accent });
+            tag.anchor.set(1, 0);
+            tag.x = cardW - 18;
+            tag.y = 68;
+            card.addChild(tag);
+          }
+        },
+      });
+    });
   },
 
-  handleClick(x, y) {
-    // Back button
-    if (x >= 30 && x <= 190 && y >= 745 && y <= 785) {
-      switchScreen(this.returnScreen);
+  buildDrawer() {
+    const cols = ThemeManager.getCurrentColors();
+    const theme = ThemeManager.getTheme(this.selectedThemeId || store.get('theme'));
+    PixiPremiumScene.panel(this.pixiContainer, 884, 134, 330, 528, { accent: theme.colors.accent, accentAlpha: 0.72 });
+
+    const preview = new PIXI.Sprite(PixiPremiumAssets.theme(theme.id));
+    preview.width = 282;
+    preview.height = 158;
+    preview.x = 908;
+    preview.y = 166;
+    this.pixiContainer.addChild(preview);
+
+    const title = PixiPremiumScene.text(theme.name, { fontSize: 26, fontWeight: '900', fill: cols.text });
+    title.x = 908;
+    title.y = 342;
+    PixiPremiumScene.fit(title, 280);
+    this.pixiContainer.addChild(title);
+    const desc = PixiPremiumScene.text(theme.desc, { fontSize: 16, fill: PixiPremiumScene.alpha(cols.text, 'aa') });
+    desc.x = 908;
+    desc.y = 376;
+    PixiPremiumScene.fit(desc, 280);
+    this.pixiContainer.addChild(desc);
+
+    if (theme.id !== 'custom') {
+      PixiPremiumScene.button(this.pixiContainer, 908, 428, 282, 46, store.get('theme') === theme.id ? 'Applied' : 'Apply Theme', () => this.selectTheme(theme.id, true), { primary: store.get('theme') !== theme.id, icon: 'spark' });
+      this.palettePreview(theme, 908, 500);
       return;
     }
 
-    const cardW = 220;
-    const cardH = 130;
-    const gapX = 30;
-    const gapY = 25;
-    const perRow = 4;
-    const totalGridW = perRow * cardW + (perRow - 1) * gapX;
-    const startX = (1280 - totalGridW) / 2;
-    const startY = 120;
-
-    for (let i = 0; i < this.themes.length; i++) {
-      const row = Math.floor(i / perRow);
-      const col = i % perRow;
-      const cx = startX + col * (cardW + gapX);
-      const cy = startY + row * (cardH + gapY);
-      if (x >= cx && x <= cx + cardW && y >= cy && y <= cy + cardH) {
-        if (ThemeManager.isThemeUnlocked(this.themes[i].id)) {
-          ThemeManager.applyTheme(this.themes[i].id);
-        }
-        return;
-      }
-    }
-
-    // Custom color swatch clicks
-    const customIdx = this.themes.findIndex(t => t.id === 'custom');
-    const isCustomActive = customIdx !== -1 && (this.hoveredIndex === customIdx || store.get('theme') === 'custom');
-    if (isCustomActive) {
-      const editorY = 500;
-      const colorKeys = ['lightSquare', 'darkSquare', 'lightPiece', 'darkPiece', 'highlight', 'background', 'panel', 'text', 'accent', 'buttonBg'];
-      const swatchSize = 22;
-      const swatchGap = 8;
-      const colsPerRow = 5;
-      const swatchTotalW = colsPerRow * (swatchSize + swatchGap) - swatchGap;
-      const swatchStartX = startX + (totalGridW - swatchTotalW) / 2;
-      const swatchStartY = editorY + 38;
-      const presets = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#44ffff', '#ffffff', '#000000', '#888888', '#ff8800', '#8800ff', '#0088ff', '#8b4513', '#2e8b57', '#800000'];
-
-      for (let i = 0; i < colorKeys.length; i++) {
-        const row = Math.floor(i / colsPerRow);
-        const col = i % colsPerRow;
-        const sx = swatchStartX + col * (swatchSize + swatchGap);
-        const sy = swatchStartY + row * (swatchSize + swatchGap + 12);
-        if (x >= sx && x <= sx + swatchSize && y >= sy && y <= sy + swatchSize) {
-          const key = colorKeys[i];
-          const current = ThemeManager.getTheme('custom').colors[key];
-          let idx = presets.indexOf(current);
-          if (idx === -1) idx = 0;
-          const nextColor = presets[(idx + 1) % presets.length];
-          ThemeManager.setCustomColor(key, nextColor);
-          return;
-        }
-      }
-
-      // Music theme chip clicks
-      for (const t of this.themes.filter(t => t.id !== 'custom')) {
-        if (t._musicBounds && x >= t._musicBounds.x && x <= t._musicBounds.x + t._musicBounds.w &&
-            y >= t._musicBounds.y && y <= t._musicBounds.y + t._musicBounds.h) {
-          store.set('customMusicTheme', t.id);
-          store.saveProgress();
-          if (typeof audioManager !== 'undefined') {
-            audioManager.stopMusic();
-            audioManager.startMusic();
-          }
-          return;
-        }
-      }
-
-      // Background theme chip clicks
-      for (const t of this.themes.filter(t => t.id !== 'custom')) {
-        if (t._bgBounds && x >= t._bgBounds.x && x <= t._bgBounds.x + t._bgBounds.w &&
-            y >= t._bgBounds.y && y <= t._bgBounds.y + t._bgBounds.h) {
-          store.set('customBgTheme', t.id);
-          store.saveProgress();
-          return;
-        }
-      }
-    }
+    this.customEditor(908, 418);
   },
 
-  handleMouseMove(x, y) {
-    this.hoveredIndex = -1;
-    const cardW = 220;
-    const cardH = 130;
-    const gapX = 30;
-    const gapY = 25;
-    const perRow = 4;
-    const totalGridW = perRow * cardW + (perRow - 1) * gapX;
-    const startX = (1280 - totalGridW) / 2;
-    const startY = 120;
+  palettePreview(theme, x, y) {
+    const colors = ['lightSquare', 'darkSquare', 'lightPiece', 'darkPiece', 'accent', 'background'];
+    colors.forEach((key, i) => {
+      const chip = new PIXI.Graphics()
+        .roundRect(x + (i % 3) * 48, y + Math.floor(i / 3) * 48, 36, 36, 6)
+        .fill(PixiPremiumScene.color(theme.colors[key]))
+        .roundRect(x + (i % 3) * 48, y + Math.floor(i / 3) * 48, 36, 36, 6)
+        .stroke({ color: 0xffffff, alpha: 0.25, width: 2 });
+      this.pixiContainer.addChild(chip);
+    });
+  },
 
-    for (let i = 0; i < this.themes.length; i++) {
-      const row = Math.floor(i / perRow);
-      const col = i % perRow;
-      const cx = startX + col * (cardW + gapX);
-      const cy = startY + row * (cardH + gapY);
-      if (x >= cx && x <= cx + cardW && y >= cy && y <= cy + cardH) {
-        this.hoveredIndex = i;
-        return;
+  customEditor(x, y) {
+    const cols = ThemeManager.getCurrentColors();
+    const custom = ThemeManager.getTheme('custom');
+    const colorKeys = ['lightSquare', 'darkSquare', 'lightPiece', 'darkPiece', 'highlight', 'background', 'panel', 'text', 'accent', 'buttonBg'];
+    const presets = ['#ff6578', '#7dea99', '#6aa7ff', '#ffe17a', '#d24dff', '#4dd7d0', '#ffffff', '#101423', '#8b9dc3', '#ff9a4d', '#905cff', '#21a9ff', '#7a4b2a', '#2e8b57', '#59172a'];
+
+    const heading = PixiPremiumScene.text('Custom Palette', { fontSize: 18, fontWeight: '900', fill: cols.text });
+    heading.x = x;
+    heading.y = y;
+    this.pixiContainer.addChild(heading);
+
+    colorKeys.forEach((key, i) => {
+      const sx = x + (i % 5) * 54;
+      const sy = y + 38 + Math.floor(i / 5) * 66;
+      const group = new PIXI.Container();
+      group.x = sx;
+      group.y = sy;
+      group.eventMode = 'static';
+      group.cursor = 'pointer';
+      group.hitArea = new PIXI.Rectangle(0, 0, 42, 56);
+      group.on('pointertap', () => {
+        const current = custom.colors[key];
+        const index = Math.max(0, presets.indexOf(current));
+        ThemeManager.setCustomColor(key, presets[(index + 1) % presets.length]);
+        ThemeManager.applyTheme('custom');
+        this.selectedThemeId = 'custom';
+        this.build();
+      });
+      const chip = new PIXI.Graphics()
+        .roundRect(0, 0, 38, 38, 6)
+        .fill(PixiPremiumScene.color(custom.colors[key]))
+        .roundRect(0, 0, 38, 38, 6)
+        .stroke({ color: PixiPremiumScene.color(cols.text), alpha: 0.35, width: 2 });
+      group.addChild(chip);
+      const label = PixiPremiumScene.text(key.replace('Square', ''), { fontSize: 10, fill: PixiPremiumScene.alpha(cols.text, '99') });
+      label.anchor.set(0.5, 0);
+      label.x = 19;
+      label.y = 43;
+      PixiPremiumScene.fit(label, 52, 0.48);
+      group.addChild(label);
+      this.pixiContainer.addChild(group);
+    });
+
+    this.themeChips('Music', store.get('customMusicTheme') || 'space', x, y + 190, (id) => {
+      store.set('customMusicTheme', id);
+      store.saveProgress();
+      if (typeof audioManager !== 'undefined') {
+        audioManager.stopMusic();
+        audioManager.startMusic();
       }
-    }
+      this.build();
+    });
+    this.themeChips('Backdrop', store.get('customBgTheme') || 'space', x, y + 266, (id) => {
+      store.set('customBgTheme', id);
+      store.saveProgress();
+      this.build();
+    });
+
+    PixiPremiumScene.button(this.pixiContainer, x, 608, 282, 42, store.get('theme') === 'custom' ? 'Custom Applied' : 'Apply Custom', () => this.selectTheme('custom', true), { primary: true });
+  },
+
+  themeChips(label, current, x, y, onPick) {
+    const cols = ThemeManager.getCurrentColors();
+    const t = PixiPremiumScene.text(label, { fontSize: 15, fontWeight: '900', fill: cols.text });
+    t.x = x;
+    t.y = y;
+    this.pixiContainer.addChild(t);
+    const baseThemes = this.themes.filter(theme => theme.id !== 'custom').slice(0, 10);
+    baseThemes.forEach((theme, i) => {
+      const chip = PixiPremiumScene.button(this.pixiContainer, x + (i % 5) * 56, y + 28 + Math.floor(i / 5) * 30, 48, 22, theme.name.split(' ')[0], () => onPick(theme.id), {
+        primary: theme.id === current,
+        fontSize: 10,
+        color: theme.colors.accent,
+      });
+      chip.scale.set(1);
+    });
+  },
+
+  selectTheme(id, unlocked) {
+    this.selectedThemeId = id;
+    if (unlocked) ThemeManager.applyTheme(id);
+    this.build();
+  },
+
+  unlockLabel(id) {
+    const reqs = { egypt: 2, cyberpunk: 4, japanese: 5, artdeco: 6, wildwest: 7, prehistoric: 8, steampunk: 9 };
+    return reqs[id] ? `Story Lv ${reqs[id]}` : 'Story locked';
   },
 
   handleKeyDown(e) {
-    if (e.key === 'Escape') {
-      switchScreen(this.returnScreen);
-    }
+    if (e.key === 'Escape') switchScreen(this.returnScreen);
   },
 };

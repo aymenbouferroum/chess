@@ -10,4 +10,5 @@ const PixiUI = {
   DitheredRect: PixiDitheredRect,
   Text: PixiTextStyles,
   Color: PixiColorUtil,
+  Premium: PixiPremiumUI,
 };

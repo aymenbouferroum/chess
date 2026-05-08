@@ -232,12 +232,12 @@ class ReactionTest {
 
     // Title
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('REACTION TEST', x + w / 2, y + 35);
 
     // Subtitle
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.fillStyle = cols.text + '88';
     ctx.fillText('Click when the screen turns green!', x + w / 2, y + 55);
 
@@ -294,7 +294,7 @@ class ReactionTest {
       ctx.shadowBlur = 0;
 
       ctx.fillStyle = cols.text;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Wait...', x + w / 2, areaY + areaH / 2 + 6);
 
@@ -331,7 +331,7 @@ class ReactionTest {
       ctx.shadowBlur = 0;
 
       ctx.fillStyle = cols.background || cols.bg || cols.panel;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('CLICK NOW!', x + w / 2, areaY + areaH / 2 + 6);
 
@@ -373,7 +373,7 @@ class ReactionTest {
         ctx.shadowBlur = 0;
 
         ctx.fillStyle = cols.text;
-        ctx.font = 'bold 16px monospace';
+        ctx.font = 'bold 16px "Pixelify Sans", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('Too early!', x + w / 2, areaY + areaH / 2 + 6);
 
@@ -414,7 +414,7 @@ class ReactionTest {
         ctx.shadowBlur = 0;
 
         ctx.fillStyle = cols.text;
-        ctx.font = 'bold 16px monospace';
+        ctx.font = 'bold 16px "Pixelify Sans", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(Math.round(this.reactionTime) + 'ms', x + w / 2, areaY + areaH / 2 + 6);
       }
@@ -449,14 +449,14 @@ class ReactionTest {
 
     // Stats (outside shake transform so they stay stable)
     ctx.fillStyle = cols.text + '66';
-    ctx.font = '11px monospace';
+    ctx.font = '11px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Trial: ' + (this.trials + 1) + '/' + this.maxTrials, x + w / 2, areaY + areaH + 25);
     if (this.trials > 0) {
       ctx.fillText('Avg: ' + Math.round(this.totalTime / this.trials) + 'ms', x + w / 2, areaY + areaH + 45);
     }
     ctx.fillStyle = cols.accent;
-    ctx.font = '10px monospace';
+    ctx.font = '10px "Pixelify Sans", sans-serif';
     ctx.fillText('Target: <' + this.targetTime + 'ms to win', x + w / 2, areaY + areaH + 65);
 
     if (this.done) {
@@ -466,7 +466,7 @@ class ReactionTest {
       ctx.fillStyle = cols.text;
       ctx.shadowColor = win ? cols.accent : (cols.highlight || cols.accent);
       ctx.shadowBlur = 14;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(win ? 'You Win!' : 'You Lose!', x + w / 2, y + h / 2);
       ctx.shadowBlur = 0;

@@ -80,7 +80,7 @@ const PixiMenuBackground = {
     }
 
     // --- Medieval / wildwest / egyptian: embers / dust ---
-    if (id === 'medieval' || id === 'wildwest' || id === 'egyptian' || id === 'prehistoric' || id === 'steampunk') {
+    if (id === 'medieval' || id === 'wildwest' || id === 'egypt' || id === 'prehistoric' || id === 'steampunk') {
       for (let i = 0; i < 45; i++) {
         const e = this._createEmber();
         this.embers.push(e);
@@ -115,9 +115,7 @@ const PixiMenuBackground = {
   _createStar() {
     const sprite = new PIXI.Graphics();
     const size = 1 + Math.random() * 2;
-    sprite.beginFill(0xffffff, 0.8);
-    sprite.drawRect(-size / 2, -size / 2, size, size);
-    sprite.endFill();
+    sprite.rect(-size / 2, -size / 2, size, size).fill({ color: 0xffffff, alpha: 0.8 });
     return {
       sprite,
       x: Math.random() * 1280,
@@ -135,9 +133,7 @@ const PixiMenuBackground = {
     const hex = isAccent ? this.colors.accent : '#ffffff';
     const color = parseInt(hex.replace('#', '0x'), 16);
 
-    sprite.beginFill(color, 0.5);
-    sprite.drawRect(-size / 2, -size / 2, size, size);
-    sprite.endFill();
+    sprite.rect(-size / 2, -size / 2, size, size).fill({ color, alpha: 0.5 });
 
     return {
       sprite,
@@ -153,9 +149,7 @@ const PixiMenuBackground = {
 
   _createShootingStar() {
     const sprite = new PIXI.Graphics();
-    sprite.beginFill(0xffffff, 0.9);
-    sprite.drawRect(0, -1, 30, 2);
-    sprite.endFill();
+    sprite.rect(0, -1, 30, 2).fill({ color: 0xffffff, alpha: 0.9 });
     sprite.alpha = 0;
     return {
       sprite,
@@ -174,9 +168,7 @@ const PixiMenuBackground = {
     const w = 4 + Math.random() * 4;
     const h = 3 + Math.random() * 3;
     const pink = Math.random() > 0.5 ? 0xffb7c5 : 0xffc0cb;
-    sprite.beginFill(pink, 0.7);
-    sprite.drawEllipse(0, 0, w / 2, h / 2);
-    sprite.endFill();
+    sprite.ellipse(0, 0, w / 2, h / 2).fill({ color: pink, alpha: 0.7 });
     return {
       sprite,
       x: Math.random() * 1280,
@@ -192,10 +184,9 @@ const PixiMenuBackground = {
   _createBubble() {
     const sprite = new PIXI.Graphics();
     const r = 2 + Math.random() * 5;
-    sprite.lineStyle(1, 0xaaddff, 0.4);
-    sprite.beginFill(0xaaddff, 0.1);
-    sprite.drawCircle(0, 0, r);
-    sprite.endFill();
+    sprite.circle(0, 0, r)
+      .fill({ color: 0xaaddff, alpha: 0.1 })
+      .stroke({ width: 1, color: 0xaaddff, alpha: 0.4 });
     return {
       sprite,
       x: Math.random() * 1280,
@@ -211,9 +202,7 @@ const PixiMenuBackground = {
     const sprite = new PIXI.Graphics();
     const size = 1.5 + Math.random() * 2.5;
     const warm = Math.random() > 0.5 ? 0xff6644 : 0xffaa33;
-    sprite.beginFill(warm, 0.7);
-    sprite.drawRect(-size / 2, -size / 2, size, size);
-    sprite.endFill();
+    sprite.rect(-size / 2, -size / 2, size, size).fill({ color: warm, alpha: 0.7 });
     return {
       sprite,
       x: Math.random() * 1280,
@@ -229,9 +218,7 @@ const PixiMenuBackground = {
     const sprite = new PIXI.Graphics();
     const size = 2 + Math.random() * 3;
     const cyan = Math.random() > 0.5 ? 0x44ffff : 0x88ccff;
-    sprite.beginFill(cyan, 0.5);
-    sprite.drawRect(-size / 2, -size / 2, size, size);
-    sprite.endFill();
+    sprite.rect(-size / 2, -size / 2, size, size).fill({ color: cyan, alpha: 0.5 });
     return {
       sprite,
       x: Math.random() * 1280,

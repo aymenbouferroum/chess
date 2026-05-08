@@ -2,157 +2,136 @@ const HowToPlay = {
   isPixiScreen: true,
   pixiContainer: null,
 
+  sections: [
+    {
+      title: 'Chess Basics',
+      icon: 'progress',
+      lines: [
+        'Select a piece, then choose one of its highlighted legal squares.',
+        'Capture by moving onto an occupied enemy square.',
+        'Win by checkmating the opposing king.',
+      ],
+    },
+    {
+      title: 'Capture Challenges',
+      icon: 'play',
+      lines: [
+        'Captures can trigger a short mini-game.',
+        'Win the challenge to keep the capture.',
+        'Lose and the target tile becomes locked.',
+      ],
+    },
+    {
+      title: 'Story Progress',
+      icon: 'save',
+      lines: [
+        'Pick a save slot and climb through ten opponents.',
+        'Each victory unlocks the next character.',
+        'Difficulty rises as your story level increases.',
+      ],
+    },
+    {
+      title: 'Controls',
+      icon: 'settings',
+      lines: [
+        'Mouse selects pieces and activates UI.',
+        'Escape pauses during gameplay or backs out of menus.',
+        'F11 toggles fullscreen.',
+      ],
+    },
+  ],
+
   init() {
-    const theme = ThemeManager.getTheme(store.get('theme'));
-    const cols = theme.colors;
+    this.build();
+  },
 
-    this.pixiContainer = new PIXI.Container();
-
-    // Background
-    if (typeof PixiBackgroundRenderer !== 'undefined') {
-      PixiBackgroundRenderer.init(this.pixiContainer);
-      PixiBackgroundRenderer.render(store.get('theme') || 'space');
-    }
-
-    // Semi-transparent overlay
-    const overlay = new PIXI.Graphics();
-    overlay.rect(0, 0, 1280, 800).fill({ color: 0x000000, alpha: 0.5 });
-    this.pixiContainer.addChild(overlay);
-
-    // Panel
-    const panel = new PixiPanel({
-      width: 800,
-      height: 680,
-      cols: cols,
-      accentTop: true,
+  build() {
+    if (this.pixiContainer) this.pixiContainer.destroy({ children: true });
+    this.pixiContainer = PixiPremiumScene.root('How To Play', 'Rules, capture challenges, story, and controls', {
+      footerHint: 'Learn the core loop, then jump back into the match',
     });
-    panel.x = 240;
-    panel.y = 60;
-    this.pixiContainer.addChild(panel);
-
-    // Title
-    const title = new PIXI.Text({
-      text: 'HOW TO PLAY',
-      style: PixiTextStyles.clone(PixiTextStyles.TITLE, { fill: cols.text, padding: 10 }),
-    });
-    title.anchor.set(0.5, 0);
-    title.x = 640;
-    title.y = 78;
-    this.pixiContainer.addChild(title);
-
-    // Sections
-    const sections = [
-      { title: 'Chess Basics', icon: 'crown', lines: [
-        'Click a piece to select it, then click a highlighted square to move.',
-        'Capture enemy pieces by moving onto their square.',
-        'Checkmate the enemy king to win!',
-      ]},
-      { title: 'Mini-Games', icon: 'target', lines: [
-        'Capturing a piece has a 30% chance to trigger a mini-game.',
-        'Win the mini-game to keep your capture. Lose, and the tile is locked.',
-        'Each mini-game has unique controls — watch the instructions!',
-      ]},
-      { title: 'Story Mode', icon: 'sword', lines: [
-        'Face 10 unique AI opponents with increasing difficulty.',
-        'Defeat each opponent to unlock the next level.',
-        'Each opponent has unique dialogue and personality.',
-      ]},
-      { title: 'Controls', icon: 'keyboard', lines: [
-        'Mouse: Click to select pieces and interact with UI.',
-        'ESC: Pause during gameplay.',
-        'F11: Toggle fullscreen.',
-        'Arrow Keys / Enter: Navigate menus.',
-      ]},
-    ];
-
-    let y = 130;
-    for (const section of sections) {
-      // Accent color bar instead of icon
-      const accentBar = new PIXI.Graphics();
-      accentBar.rect(0, 0, 3, 20).fill(PixiColorUtil.hexToNum(cols.accent));
-      accentBar.x = 272;
-      accentBar.y = y - 12;
-      this.pixiContainer.addChild(accentBar);
-
-      const sectionTitle = new PIXI.Text({
-        text: section.title,
-        style: {
-          fontFamily: PixiTextStyles.FONT_BODY,
-          fontSize: 18,
-          fontWeight: 'bold',
-          fill: cols.accent,
-        },
-      });
-      sectionTitle.x = 285;
-      sectionTitle.y = y - 12;
-      this.pixiContainer.addChild(sectionTitle);
-
-      y += 28;
-
-      for (const line of section.lines) {
-        const bodyText = new PIXI.Text({
-          text: line,
-          style: {
-            fontFamily: PixiTextStyles.FONT_BODY,
-            fontSize: 14,
-            fill: PixiColorUtil.alpha(cols.text, 'cc'),
-            wordWrap: true,
-            wordWrapWidth: 735,
-            lineHeight: 22,
-          },
-        });
-        bodyText.x = 285;
-        bodyText.y = y;
-        this.pixiContainer.addChild(bodyText);
-        y += bodyText.height + 6;
-      }
-
-      const sep = new PixiSeparator({ width: 720, cols: cols });
-      sep.x = 280;
-      sep.y = y + 4;
-      this.pixiContainer.addChild(sep);
-      y += 28;
-    }
-
-    // Dithered footer
-    const footer = new PixiDitheredRect({
-      width: 1280,
-      height: 30,
-      color: cols.accent,
-      alpha: 0.07,
-    });
-    footer.y = 770;
-    this.pixiContainer.addChild(footer);
-
-    // Back button
-    const backBtn = new PixiButton({
-      width: 200,
-      height: 40,
-      text: '< Back',
-      cols: cols,
-    });
-    backBtn.x = 540;
-    backBtn.y = 690;
-    backBtn.onClick(() => switchScreen('home'));
-    this.pixiContainer.addChild(backBtn);
-
     PixiScreenManager.setScreenContainer(this.pixiContainer);
+
+    PixiPremiumScene.panel(this.pixiContainer, 76, 132, 1128, 524, { accentAlpha: 0.42 });
+
+    const cardW = 520;
+    const cardH = 190;
+    const startX = 100;
+    const startY = 172;
+    const gapX = 40;
+    const gapY = 42;
+    this.sections.forEach((section, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      this.sectionCard(section, startX + col * (cardW + gapX), startY + row * (cardH + gapY), cardW, cardH);
+    });
+
+    PixiPremiumScene.button(this.pixiContainer, 36, 718, 160, 44, 'Back', () => switchScreen('home'), { icon: 'back' });
+    PixiPremiumScene.button(this.pixiContainer, 1084, 718, 160, 44, 'Practice', () => switchScreen('miniGamePractice'), { icon: 'play' });
+  },
+
+  sectionCard(section, x, y, w, h) {
+    PixiPremiumScene.card(this.pixiContainer, x, y, w, h, {
+      interactive: false,
+      alpha: 0.72,
+      draw: (card) => {
+        const cols = ThemeManager.getCurrentColors();
+        const iconBox = new PIXI.Graphics();
+        iconBox.roundRect(28, 34, 66, 66, 8).fill({ color: PixiColorUtil.hexToNum(cols.buttonBg), alpha: 0.74 });
+        iconBox.roundRect(28, 34, 66, 66, 8).stroke({ color: PixiColorUtil.hexToNum(cols.accent), alpha: 0.62, width: 2 });
+        card.addChild(iconBox);
+
+        const icon = new PIXI.Sprite(PixiPremiumAssets.icon(section.icon));
+        icon.width = 46;
+        icon.height = 46;
+        icon.x = 38;
+        icon.y = 44;
+        card.addChild(icon);
+
+        const title = PixiPremiumScene.text(section.title, {
+          fontSize: 24,
+          fontWeight: '900',
+          fill: cols.text,
+        });
+        title.x = 116;
+        title.y = 30;
+        PixiPremiumScene.fit(title, w - 150, 0.7);
+        card.addChild(title);
+
+        let lineY = 76;
+        section.lines.forEach((line, idx) => {
+          const dot = new PIXI.Graphics();
+          dot.rect(0, 0, 7, 7).fill({ color: PixiColorUtil.hexToNum(cols.accent), alpha: 0.88 });
+          dot.x = 118;
+          dot.y = lineY + 8;
+          card.addChild(dot);
+
+          const text = PixiPremiumScene.text(line, {
+            fontSize: 15,
+            fontWeight: '600',
+            fill: PixiPremiumScene.alpha(cols.text, 'bb'),
+            wordWrap: true,
+            wordWrapWidth: w - 160,
+            lineHeight: 19,
+          });
+          text.x = 136;
+          text.y = lineY;
+          card.addChild(text);
+          lineY += Math.max(29, text.height + 8);
+        });
+      },
+    });
+  },
+
+  pixiUpdate(dt) {
+    PixiPremiumScene.update(this.pixiContainer, dt);
   },
 
   destroy() {
-    if (typeof PixiBackgroundRenderer !== 'undefined') {
-      PixiBackgroundRenderer.destroy();
-    }
-    if (this.pixiContainer) {
-      PixiScreenManager.setScreenContainer(null);
-      this.pixiContainer.destroy({ children: true });
-      this.pixiContainer = null;
-    }
+    PixiPremiumScene.destroy(this);
   },
 
   handleKeyDown(e) {
-    if (e.key === 'Escape') {
-      switchScreen('home');
-    }
+    if (e.key === 'Escape') switchScreen('home');
   },
 };

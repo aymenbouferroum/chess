@@ -223,11 +223,22 @@ function initApp() {
   });
   resizeCanvas();
 
+  const fontsReady = document.fonts && document.fonts.ready
+    ? Promise.race([
+      document.fonts.ready,
+      new Promise(resolve => setTimeout(resolve, 2500)),
+    ])
+    : Promise.resolve();
+
   // Initialize PixiJS (async for v8)
   const pixiReady = (typeof PixiApp !== 'undefined') ? PixiApp.init() : Promise.resolve();
-  pixiReady.then(() => {
+  pixiReady.then(async () => {
+    await fontsReady;
     if (typeof PixiScreenManager !== 'undefined') {
       PixiScreenManager.init();
+    }
+    if (typeof PixiPremiumAssets !== 'undefined' && PixiPremiumAssets.preloadAll) {
+      PixiPremiumAssets.preloadAll();
     }
     switchScreen('home');
   });

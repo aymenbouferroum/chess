@@ -24,6 +24,7 @@ class MiniGameManager {
       { type: RhythmTap, weight: 1 },
       { type: NumberGuess, weight: 1 },
       { type: CoinFlip, weight: 1 },
+      { type: BarBalance, weight: 1 },
       { type: ShieldBlock, weight: 1 },
       { type: WhackMole, weight: 1 },
     ];
@@ -68,7 +69,7 @@ class MiniGameManager {
       PatternPress: 'patternPress', ReactionTest: 'reactionTest', UndertaleDodge: 'undertaleDodge',
       PowerMeter: 'powerMeter', TargetPractice: 'targetPractice', DodgeFalling: 'dodgeFalling',
       RhythmTap: 'rhythmTap', NumberGuess: 'numberGuess', CoinFlip: 'coinFlip',
-      ShieldBlock: 'shieldBlock', WhackMole: 'whackMole',
+      BarBalance: 'barBalance', ShieldBlock: 'shieldBlock', WhackMole: 'whackMole',
     };
     const key = gameKeyMap[gameType.name];
     return key ? customMg[key] !== false : true;
@@ -261,7 +262,7 @@ class MiniGameManager {
     // Duel banner
     if (this.isDuel) {
       ctx.fillStyle = cols.accent;
-      ctx.font = 'bold 14px monospace';
+      ctx.font = 'bold 14px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.shadowColor = cols.accent;
       ctx.shadowBlur = 8;
@@ -274,14 +275,14 @@ class MiniGameManager {
     this._drawPieceIcon(ctx, ox + ow - 90, oy + 30, this.defenderPiece, 'right');
 
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('VS', 640, oy + 55);
 
     // Difficulty stars
     const diff = MiniGameManager.calculateDifficulty(this.attackerPiece, this.defenderPiece, { row: 0, col: 0 });
     ctx.fillStyle = '#ffcc00';
-    ctx.font = '14px monospace';
+    ctx.font = '14px "Pixelify Sans", sans-serif';
     let stars = '';
     for (let i = 0; i < 5; i++) stars += i < diff ? '★' : '☆';
     ctx.fillText('Difficulty: ' + stars, 640, oy + 75);
@@ -306,13 +307,13 @@ class MiniGameManager {
       ctx.fillStyle = isWin ? '#44ff44' : '#ff4444';
       ctx.shadowColor = isWin ? '#44ff44' : '#ff4444';
       ctx.shadowBlur = 12;
-      ctx.font = 'bold 28px monospace';
+      ctx.font = 'bold 28px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(isWin ? 'CAPTURED!' : 'BLOCKED!', 640, oy + oh * 0.55);
       ctx.shadowBlur = 0;
 
       ctx.fillStyle = cols.text + 'bb';
-      ctx.font = '13px monospace';
+      ctx.font = '13px "Pixelify Sans", sans-serif';
       ctx.fillText(isWin ? 'Piece captured successfully' : 'Square locked - move blocked', 640, oy + oh * 0.62);
 
       ctx.globalAlpha = alpha * globalAlpha;

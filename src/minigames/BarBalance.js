@@ -204,10 +204,10 @@ class BarBalance {
 
     // Title
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 18px monospace';
+    ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('BAR BALANCE', x + w / 2, y + 24);
-    ctx.font = 'bold 12px monospace';
+    ctx.font = 'bold 12px "Pixelify Sans", sans-serif';
     ctx.globalAlpha = 0.55;
     ctx.fillStyle = cols.text;
     ctx.fillText('Click LEFT side to push left, RIGHT side to push right', x + w / 2, y + 42);
@@ -357,12 +357,12 @@ class BarBalance {
 
     // Angle text
     ctx.fillStyle = cols.text;
-    ctx.font = '12px monospace';
+    ctx.font = '12px "Pixelify Sans", sans-serif';
     ctx.fillText('Angle: ' + Math.round(this.angle * 57.3) + '°', x + w / 2, y + 155);
     ctx.fillText('Time: ' + Math.ceil(this.timeLeft) + 's', x + w / 2, y + 175);
 
     // Balance quality indicator
-    ctx.font = '10px monospace';
+    ctx.font = '10px "Pixelify Sans", sans-serif';
     if (balanceRatio > 0.8) {
       ctx.fillStyle = cols.accent;
       ctx.fillText('STEADY', x + w / 2, y + 192);
@@ -381,7 +381,7 @@ class BarBalance {
       ctx.fillStyle = cols.text;
       ctx.shadowColor = win ? cols.accent : (cols.highlight || cols.accent);
       ctx.shadowBlur = 14;
-      ctx.font = 'bold 18px monospace';
+      ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
       ctx.fillText(win ? 'You Win!' : 'You Lose!', x + w / 2, y + h / 2);
       ctx.shadowBlur = 0;
     }

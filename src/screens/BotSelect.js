@@ -60,11 +60,11 @@ const BotSelect = {
     }
 
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 28px monospace';
+    ctx.font = 'bold 28px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('SELECT OPPONENT', 640, 55);
     ctx.fillStyle = cols.text + '77';
-    ctx.font = '12px monospace';
+    ctx.font = '12px "Pixelify Sans", sans-serif';
     ctx.fillText('Choose your AI opponent strength', 640, 80);
     UIHelpers.drawSeparator(ctx, 300, 95, 680, cols);
 
@@ -73,23 +73,23 @@ const BotSelect = {
 
     // Elo number (large)
     ctx.fillStyle = cols.accent;
-    ctx.font = 'bold 64px monospace';
+    ctx.font = 'bold 64px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(this.eloValue, 640, 220);
 
     ctx.fillStyle = cols.text + '88';
-    ctx.font = '16px monospace';
+    ctx.font = '16px "Pixelify Sans", sans-serif';
     ctx.fillText('ELO', 640, 240);
 
     // Difficulty name
     const name = this.eloToName(this.eloValue);
     ctx.fillStyle = cols.accent;
-    ctx.font = 'bold 22px monospace';
+    ctx.font = 'bold 22px "Pixelify Sans", sans-serif';
     ctx.fillText(name, 640, 280);
 
     // Description
     ctx.fillStyle = cols.text + '88';
-    ctx.font = '14px monospace';
+    ctx.font = '14px "Pixelify Sans", sans-serif';
     ctx.fillText(this.eloToDescription(this.eloValue), 640, 305);
 
     // Elo slider bar
@@ -124,7 +124,7 @@ const BotSelect = {
 
     // Labels at ends
     ctx.fillStyle = cols.text + '66';
-    ctx.font = '10px monospace';
+    ctx.font = '10px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText('200', sliderX, sliderY + sliderH + 18);
     ctx.textAlign = 'right';
@@ -132,7 +132,7 @@ const BotSelect = {
 
     // Tick marks
     ctx.fillStyle = cols.text + '33';
-    ctx.font = '9px monospace';
+    ctx.font = '9px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     for (let e = 400; e <= 1800; e += 200) {
       const tx = sliderX + ((e - 200) / 1800) * sliderW;
@@ -144,14 +144,14 @@ const BotSelect = {
     const config = AIController.LEVEL_CONFIG[diff];
     if (config) {
       ctx.fillStyle = cols.text + '66';
-      ctx.font = '12px monospace';
+      ctx.font = '12px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Depth: ' + config.depth + '  |  AI Level: ' + diff, 640, 420);
     }
 
     // Side selection (play as white/black)
     ctx.fillStyle = cols.text + '88';
-    ctx.font = '14px monospace';
+    ctx.font = '14px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Play as:', 640, 470);
 
@@ -171,20 +171,20 @@ const BotSelect = {
 
     // Hint
     ctx.fillStyle = cols.text + '44';
-    ctx.font = '11px monospace';
+    ctx.font = '11px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Drag slider or use arrow keys. Click to start.', 640, 550);
 
     // Bottom
     UIHelpers.drawDitheredRect(ctx, 0, 770, 1280, 30, cols.accent, '11');
-    UIHelpers.drawButton(ctx, 30, 730, 160, 40, '< Back', cols, { font: 'bold 14px monospace' });
+    UIHelpers.drawButton(ctx, 30, 730, 160, 40, '< Back', cols, { font: 'bold 14px "Pixelify Sans", sans-serif' });
 
     // Start button
     ctx.fillStyle = cols.accent + '22';
     ctx.fillRect(1280 - 218, 712, 194, 54);
     ctx.fillRect(1280 - 216, 714, 198, 58);
     UIHelpers.drawButton(ctx, 1280 - 220, 710, 190, 50, 'START GAME', cols, {
-      font: 'bold 16px monospace',
+      font: 'bold 16px "Pixelify Sans", sans-serif',
       active: true,
     });
   },

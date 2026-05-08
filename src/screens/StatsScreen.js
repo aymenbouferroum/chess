@@ -1,113 +1,155 @@
 const StatsScreen = {
-  init() {},
-  destroy() {},
+  isPixiScreen: true,
+  pixiContainer: null,
 
-  render(ctx, dt) {
-    const theme = ThemeManager.getTheme(store.get('theme'));
-    const cols = theme.colors;
-
-    const usePixiBg = typeof PixiMenuBackground !== 'undefined' && PixiMenuBackground.initialized;
-    if (usePixiBg) {
-      ctx.clearRect(0, 0, 1280, 800);
-    } else if (typeof backgroundRenderer !== 'undefined') {
-      backgroundRenderer.render(ctx, dt);
-    } else {
-      ctx.fillStyle = cols.background;
-      ctx.fillRect(0, 0, 1280, 800);
-    }
-
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(0, 0, 1280, 800);
-
-    UIHelpers.drawPanel(ctx, 340, 80, 600, 620, cols, { accentTop: true, borderWidth: 3 });
-
-    UIHelpers.drawIcon(ctx, 636, 92, 'trophy', 12, cols);
-
-    ctx.fillStyle = cols.text;
-    ctx.font = 'bold 28px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('STATISTICS', 640, 120);
-
-    const stats = store.get('stats') || {};
-    const items = [
-      { label: 'Games Played', value: stats.gamesPlayed || 0 },
-      { label: 'Wins', value: stats.wins || 0, max: stats.gamesPlayed || 1 },
-      { label: 'Losses', value: stats.losses || 0 },
-      { label: 'Draws', value: stats.draws || 0 },
-      { label: 'Captures', value: stats.captures || 0 },
-      { label: 'Mini-Games Played', value: stats.miniGamesPlayed || 0 },
-      { label: 'Mini-Games Won', value: stats.miniGamesWon || 0, max: stats.miniGamesPlayed || 1 },
-      { label: 'Story Level Reached', value: (store.getActiveSave() && store.getActiveSave().storyLevel) || 1, max: 10 },
-    ];
-
-    const panelX = 340;
-    const panelW = 600;
-    const cardMargin = 15;
-    const cardW = panelW - cardMargin * 2;
-    const cardH = 40;
-    const progressExtra = 20;
-    const separatorGap = 10;
-
-    // Calculate total content height for vertical centering
-    let totalHeight = 0;
-    for (let i = 0; i < items.length; i++) {
-      totalHeight += cardH;
-      if (items[i].max) totalHeight += progressExtra;
-      if (i < items.length - 1) totalHeight += separatorGap;
-      if (i % 2 === 0 && i < items.length - 1) totalHeight += separatorGap;
-    }
-
-    const panelContentTop = 140; // below title
-    const panelContentBottom = 640; // above back button area
-    const availableHeight = panelContentBottom - panelContentTop;
-    let y = panelContentTop + Math.max(0, (availableHeight - totalHeight) / 2);
-
-    const x = panelX;
-    const w = panelW;
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-
-      // Draw card background behind each stat row
-      UIHelpers.drawCard(ctx, panelX + cardMargin, y - 8, cardW, cardH, cols, { hover: false });
-
-      ctx.fillStyle = cols.text + '88';
-      ctx.font = '16px "Pixelify Sans", monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(item.label, x + 40, y + 8);
-      ctx.fillStyle = cols.accent;
-      ctx.font = 'bold 20px "Pixelify Sans", monospace';
-      ctx.textAlign = 'right';
-      ctx.fillText(String(item.value), x + w - 40, y + 8);
-
-      let rowBottom = y + cardH - 8;
-      if (item.max) {
-        UIHelpers.drawProgressBar(ctx, panelX + cardMargin + 10, rowBottom, cardW - 20, 6, item.value / item.max, cols);
-        rowBottom += progressExtra;
-      }
-
-      if (i % 2 === 0 && i < items.length - 1) {
-        UIHelpers.drawSeparator(ctx, panelX + cardMargin, rowBottom + separatorGap / 2, cardW, cols);
-        rowBottom += separatorGap;
-      }
-
-      y = rowBottom + separatorGap;
-    }
-
-    UIHelpers.drawDitheredRect(ctx, 0, 770, 1280, 30, cols.accent, '11');
-
-    // Back button
-    UIHelpers.drawButton(ctx, 540, 650, 200, 40, '< Back', cols, { font: 'bold 14px monospace' });
+  init() {
+    this.build();
   },
 
-  handleClick(x, y) {
-    if (x >= 540 && x <= 740 && y >= 650 && y <= 690) {
-      switchScreen('home');
-    }
+  build() {
+    if (this.pixiContainer) this.pixiContainer.destroy({ children: true });
+    this.pixiContainer = PixiPremiumScene.root('Statistics', 'Match results, captures, mini-games, and story progress', {
+      footerHint: 'Progress is read from your existing save data',
+    });
+    PixiScreenManager.setScreenContainer(this.pixiContainer);
+
+    const stats = store.get('stats') || {};
+    const save = store.getActiveSave && store.getActiveSave();
+    const games = stats.gamesPlayed || 0;
+    const miniGames = stats.miniGamesPlayed || 0;
+    const storyLevel = (save && save.storyLevel) || 1;
+
+    const cards = [
+      { label: 'Games Played', value: games, icon: 'progress', accent: '#8dd9ff' },
+      { label: 'Wins', value: stats.wins || 0, icon: 'spark', accent: '#7dea99', ratio: games ? (stats.wins || 0) / games : 0 },
+      { label: 'Losses', value: stats.losses || 0, icon: 'lock', accent: '#ff6578', ratio: games ? (stats.losses || 0) / games : 0 },
+      { label: 'Draws', value: stats.draws || 0, icon: 'save', accent: '#ffe985', ratio: games ? (stats.draws || 0) / games : 0 },
+      { label: 'Captures', value: stats.captures || 0, icon: 'play', accent: '#8fe8ce' },
+      { label: 'Mini-Games Played', value: miniGames, icon: 'settings', accent: '#c99bff' },
+      { label: 'Mini-Games Won', value: stats.miniGamesWon || 0, icon: 'spark', accent: '#7dea99', ratio: miniGames ? (stats.miniGamesWon || 0) / miniGames : 0 },
+      { label: 'Story Level Reached', value: `${storyLevel} / 10`, icon: 'progress', accent: '#8dd9ff', ratio: Math.min(1, storyLevel / 10) },
+    ];
+
+    PixiPremiumScene.panel(this.pixiContainer, 76, 132, 1128, 524, { accentAlpha: 0.42 });
+
+    const cols = ThemeManager.getCurrentColors();
+    const summary = this.summaryPanel(118, 174, 344, 392, stats, storyLevel, cols);
+    this.pixiContainer.addChild(summary);
+
+    const grid = new PIXI.Container();
+    grid.x = 504;
+    grid.y = 174;
+    this.pixiContainer.addChild(grid);
+    cards.forEach((card, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      this.statCard(grid, col * 318, row * 96, 286, 76, card, cols);
+    });
+
+    PixiPremiumScene.button(this.pixiContainer, 36, 718, 160, 44, 'Back', () => switchScreen('home'), { icon: 'back' });
+  },
+
+  summaryPanel(x, y, w, h, stats, storyLevel, cols) {
+    const group = new PIXI.Container();
+    PixiPremiumScene.panel(group, x, y, w, h, { accentAlpha: 0.58, alpha: 0.70 });
+
+    const title = PixiPremiumScene.text('Career Snapshot', {
+      fontSize: 25,
+      fontWeight: '900',
+      fill: cols.text,
+    });
+    title.x = x + 34;
+    title.y = y + 36;
+    group.addChild(title);
+
+    const games = stats.gamesPlayed || 0;
+    const wins = stats.wins || 0;
+    const winRate = games ? Math.round((wins / games) * 100) : 0;
+    const miniGames = stats.miniGamesPlayed || 0;
+    const miniWins = stats.miniGamesWon || 0;
+    const miniRate = miniGames ? Math.round((miniWins / miniGames) * 100) : 0;
+
+    const rows = [
+      ['Win Rate', `${winRate}%`],
+      ['Mini-Game Rate', `${miniRate}%`],
+      ['Story Progress', `${storyLevel}/10`],
+    ];
+    rows.forEach((row, i) => {
+      const yy = y + 112 + i * 72;
+      const label = PixiPremiumScene.text(row[0], { fontSize: 16, fontWeight: '700', fill: PixiPremiumScene.alpha(cols.text, '88') });
+      label.x = x + 34;
+      label.y = yy;
+      group.addChild(label);
+      const value = PixiPremiumScene.text(row[1], { fontSize: 28, fontWeight: '900', fill: cols.accent });
+      value.anchor.set(1, 0);
+      value.x = x + w - 34;
+      value.y = yy - 6;
+      group.addChild(value);
+    });
+
+    this.bar(group, x + 34, y + 336, w - 68, 16, Math.min(1, storyLevel / 10), cols);
+    return group;
+  },
+
+  statCard(parent, x, y, w, h, item, cols) {
+    PixiPremiumScene.card(parent, x, y, w, h, {
+      interactive: false,
+      activeColor: item.accent,
+      alpha: 0.68,
+      draw: (card) => {
+        const icon = new PIXI.Sprite(PixiPremiumAssets.icon(item.icon));
+        icon.width = 40;
+        icon.height = 40;
+        icon.x = 18;
+        icon.y = 18;
+        card.addChild(icon);
+
+        const label = PixiPremiumScene.text(item.label, {
+          fontSize: 15,
+          fontWeight: '700',
+          fill: PixiPremiumScene.alpha(cols.text, '88'),
+        });
+        label.x = 74;
+        label.y = 17;
+        PixiPremiumScene.fit(label, 126, 0.65);
+        card.addChild(label);
+
+        const value = PixiPremiumScene.text(String(item.value), {
+          fontSize: 25,
+          fontWeight: '900',
+          fill: item.accent,
+        });
+        value.anchor.set(1, 0);
+        value.x = w - 22;
+        value.y = 24;
+        PixiPremiumScene.fit(value, 66, 0.58);
+        card.addChild(value);
+
+        if (item.ratio !== undefined) {
+          this.bar(card, 74, 52, w - 100, 8, item.ratio, cols, item.accent);
+        }
+      },
+    });
+  },
+
+  bar(parent, x, y, w, h, value, cols, color) {
+    const g = new PIXI.Graphics();
+    g.roundRect(x, y, w, h, 4).fill({ color: 0x07111f, alpha: 0.86 });
+    g.roundRect(x, y, w, h, 4).stroke({ color: PixiPremiumScene.color(cols.text), alpha: 0.24, width: 2 });
+    g.roundRect(x + 3, y + 3, Math.max(8, (w - 6) * value), h - 6, 3)
+      .fill({ color: PixiPremiumScene.color(color || cols.accent), alpha: 0.94 });
+    parent.addChild(g);
+  },
+
+  pixiUpdate(dt) {
+    PixiPremiumScene.update(this.pixiContainer, dt);
+  },
+
+  destroy() {
+    PixiPremiumScene.destroy(this);
   },
 
   handleKeyDown(e) {
-    if (e.key === 'Escape') {
-      switchScreen('home');
-    }
+    if (e.key === 'Escape') switchScreen('home');
   },
 };

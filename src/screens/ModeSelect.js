@@ -26,13 +26,13 @@ const ModeSelect = {
 
     // Title
     ctx.fillStyle = cols.text;
-    ctx.font = 'bold 32px monospace';
+    ctx.font = 'bold 32px "Pixelify Sans", sans-serif';
     ctx.textAlign = 'center';
     const title = this.mode === 'story' ? 'STORY MODE' : 'LOCAL 1v1';
     ctx.fillText(title, 640, 200);
 
     // Subtitle
-    ctx.font = '14px monospace';
+    ctx.font = '14px "Pixelify Sans", sans-serif';
     ctx.fillStyle = cols.text + '88';
     ctx.fillText('Select your side', 640, 240);
 
@@ -73,7 +73,7 @@ const ModeSelect = {
       }
 
       ctx.fillStyle = isHover ? cols.accent : cols.text;
-      ctx.font = isHover ? 'bold 20px monospace' : '20px monospace';
+      ctx.font = isHover ? 'bold 20px "Pixelify Sans", sans-serif' : '20px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(btn.text, bx + 45, btn.y + bh / 2);
@@ -82,14 +82,14 @@ const ModeSelect = {
       // Subtitle description
       const subtitles = { white: 'First move advantage', black: 'Defensive strategy', random: 'Leave it to fate' };
       ctx.fillStyle = cols.text + '66';
-      ctx.font = '10px monospace';
+      ctx.font = '10px "Pixelify Sans", sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(subtitles[btn.action], bx + 45, btn.y + bh / 2 + 14);
 
       btn._bounds = { x: bx, y: btn.y, w: bw, h: bh };
     }
 
-    UIHelpers.drawButton(ctx, 30, 740, 150, 40, '< Home', cols, { font: 'bold 14px monospace' });
+    UIHelpers.drawButton(ctx, 30, 740, 150, 40, '< Home', cols, { font: 'bold 14px "Pixelify Sans", sans-serif' });
 
     // Bottom decorative dithered floor stripe
     UIHelpers.drawDitheredRect(ctx, 0, 700, 1280, 40, cols.accent);
