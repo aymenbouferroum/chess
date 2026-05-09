@@ -28,6 +28,8 @@ const GameScreen = {
   hoveredSquare: null,
   gameOverTimer: 0,
   hoveredGameOverBtn: null,
+  aiColor: 'black',
+  gameplayMode: true,
 
   init(data) {
     this.board = new Board();
@@ -59,6 +61,9 @@ const GameScreen = {
     if (canvas) canvas.style.pointerEvents = 'auto';
 
     this.mode = store.get('mode');
+    const p1IsWhite = store.get('p1IsWhite') !== false;
+    this.aiColor = p1IsWhite ? 'black' : 'white';
+    this.gameplayMode = store.get('customGameplayMode') !== false;
     if (this.mode === 'story') {
       this.currentCharacter = store.get('selectedCharacter');
       const charLevel = this.currentCharacter ? this.currentCharacter.level : 1;
@@ -142,6 +147,7 @@ const GameScreen = {
       lockedTiles: this.lockedTiles.map(t => ({ ...t })),
       defensiveMiniGames: { ...this.defensiveMiniGames },
       captureRewardProgress: { ...this.captureRewardProgress },
+      gameplayMode: this.gameplayMode,
       inCheck: this.board.inCheck,
     };
     // Keep only last 200 snapshots
@@ -170,6 +176,7 @@ const GameScreen = {
     this.lockedTiles = snap.lockedTiles;
     this.defensiveMiniGames = snap.defensiveMiniGames || { white: 2, black: 2 };
     this.captureRewardProgress = snap.captureRewardProgress || { white: 0, black: 0 };
+    this.gameplayMode = snap.gameplayMode !== false;
   },
 
   goToMove(index) {
@@ -202,9 +209,9 @@ const GameScreen = {
       this.aiCooldown -= dt * 1000;
       if (this.aiCooldown < 0) this.aiCooldown = 0;
     }
-    const isAIMode = this.mode === 'story' || this.mode === 'classic';
+    const isAIMode = this.mode === 'story' || this.mode === 'classic' || this.mode === 'custom';
     const isLive = this.reviewingAt === null;
-    if (isLive && isAIMode && this.turn === 'black' && !this.aiThinking && !this.gameOver && this.aiCooldown <= 0) {
+    if (isLive && isAIMode && this.turn === this.aiColor && !this.aiThinking && !this.gameOver && this.aiCooldown <= 0) {
       this.doAIMove();
     }
 
@@ -415,11 +422,13 @@ const GameScreen = {
     ctx.fillRect(x + pad, cy, w - pad * 2, 1);
     cy += 12;
 
-    const charges = this.defensiveMiniGames[color] || 0;
-    ctx.fillStyle = charges > 0 ? cols.accent : cols.text + '44';
-    ctx.font = 'bold 13px "Pixelify Sans", sans-serif';
-    ctx.fillText('DEFENSES: ' + charges, x + pad, cy);
-    cy += 22;
+    if (this.gameplayMode) {
+      const charges = this.defensiveMiniGames[color] || 0;
+      ctx.fillStyle = charges > 0 ? cols.accent : cols.text + '44';
+      ctx.font = 'bold 13px "Pixelify Sans", sans-serif';
+      ctx.fillText('DEFENSES: ' + charges, x + pad, cy);
+      cy += 22;
+    }
 
     // Captured pieces section
     const captured = this.capturedPieces[color];
@@ -786,7 +795,26 @@ const GameScreen = {
     const captured = this.board.grid[move.to.row][move.to.col];
     const isCapture = !!captured;
 
-    if (isCapture && this.tryStartDefensiveMiniGame(move, piece, captured, false)) {
+    if (isCapture && this.gameplayMode && this.tryStartDefensiveMiniGame(move, piece, captured, false)) {
+      return;
+    }
+
+    if (isCapture && !this.gameplayMode && Math.random() < 0.3 && MiniGameManager.shouldTriggerMiniGame()) {
+      const isAIMode = this.mode === 'story' || this.mode === 'classic' || this.mode === 'custom';
+      const isAIAttacking = isAIMode && this.turn === this.aiColor;
+
+      this.pendingRevertMove = { move, piece, captured };
+      miniGameManager.startMiniGame(
+        piece, captured, move.to,
+        isAIAttacking,
+        (winner) => {
+          if (winner === 'attacker') {
+            this.executeCaptureMove(move, piece, captured);
+          } else {
+            this.revertMoveAndLockTile(move);
+          }
+        }
+      );
       return;
     }
 
@@ -799,7 +827,8 @@ const GameScreen = {
     if (!captured || !MiniGameManager.shouldTriggerMiniGame()) return false;
     if ((this.defensiveMiniGames[captured.color] || 0) <= 0) return false;
 
-    const challengePlayerIsAI = (this.mode === 'story' || this.mode === 'classic') && captured.color === 'black';
+    const isAIMode = this.mode === 'story' || this.mode === 'classic' || this.mode === 'custom';
+    const challengePlayerIsAI = isAIMode && captured.color === this.aiColor;
     const started = miniGameManager.startDefensiveMiniGame({
       attacker: piece,
       defender: captured,
@@ -861,10 +890,12 @@ const GameScreen = {
       const capturingColor = this.turn;
       this.capturedPieces[capturingColor].push(captured);
       this.captureCombo++;
-      this.captureRewardProgress[capturingColor] = (this.captureRewardProgress[capturingColor] || 0) + 1;
-      if (this.captureRewardProgress[capturingColor] >= 2) {
-        this.defensiveMiniGames[capturingColor] = (this.defensiveMiniGames[capturingColor] || 0) + 1;
-        this.captureRewardProgress[capturingColor] = 0;
+      if (this.gameplayMode) {
+        this.captureRewardProgress[capturingColor] = (this.captureRewardProgress[capturingColor] || 0) + 1;
+        if (this.captureRewardProgress[capturingColor] >= 2) {
+          this.defensiveMiniGames[capturingColor] = (this.defensiveMiniGames[capturingColor] || 0) + 1;
+          this.captureRewardProgress[capturingColor] = 0;
+        }
       }
       this.comboDisplayTimer = 2;
       this.lastMoveWasCapture = true;
@@ -1019,7 +1050,7 @@ const GameScreen = {
       try {
         if (this.gameOver) { this.aiThinking = false; clearTimeout(safetyTimer); return; }
 
-        let legalMoves = GameRules.getLegalMoves(this.board, 'black');
+        let legalMoves = GameRules.getLegalMoves(this.board, this.aiColor);
         legalMoves = legalMoves.filter(m =>
           !this.lockedTiles.some(t => t.row === m.to.row && t.col === m.to.col)
         );
@@ -1031,7 +1062,7 @@ const GameScreen = {
             // Checkmate (or locked tiles blocking all escape — same result)
             this.gameOver = true;
             this.gameStatus = 'checkmate';
-            this.gameResult = 'white';
+            this.gameResult = this.aiColor === 'white' ? 'black' : 'white';
             this.handleGameEnd();
             audioManager.playVictory();
           } else {
@@ -1047,11 +1078,11 @@ const GameScreen = {
 
         let move = null;
         try {
-          move = await AIController.getMoveAsync(this.board, 'black', this.characterLevel, legalMoves);
+          move = await AIController.getMoveAsync(this.board, this.aiColor, this.characterLevel, legalMoves);
         } catch (e) {
           console.error('AIController.getMoveAsync error:', e);
           try {
-            move = AIController.getMove(this.board, 'black', this.characterLevel);
+            move = AIController.getMove(this.board, this.aiColor, this.characterLevel);
           } catch (e2) {
             console.error('AIController.getMove error:', e2);
           }
@@ -1067,9 +1098,27 @@ const GameScreen = {
         const captured = this.board.grid[move.to.row][move.to.col];
         const isCapture = !!captured;
 
-        if (isCapture && this.tryStartDefensiveMiniGame(move, piece, captured, true)) {
+        if (isCapture && this.gameplayMode && this.tryStartDefensiveMiniGame(move, piece, captured, true)) {
           clearTimeout(safetyTimer);
           this.aiCooldown = 600;
+          return;
+        }
+
+        if (isCapture && !this.gameplayMode && Math.random() < 0.3 && MiniGameManager.shouldTriggerMiniGame()) {
+          miniGameManager.startMiniGame(
+            piece, captured, move.to,
+            true,
+            (winner) => {
+              if (winner === 'attacker') {
+                this.executeCaptureMove(move, piece, captured);
+              } else {
+                this.revertMoveAndLockTile(move);
+              }
+              this.aiThinking = false;
+              this.aiCooldown = 600;
+            }
+          );
+          clearTimeout(safetyTimer);
           return;
         }
 
