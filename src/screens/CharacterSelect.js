@@ -504,6 +504,9 @@ const CharacterSelect = {
       storyLevel: this.selectedChar.level,
       mode: 'story',
     });
+    if (this.selectedChar.theme) {
+      ThemeManager.applyTheme(this.selectedChar.theme);
+    }
     store.saveProgress();
     switchScreen('game');
   },

@@ -56,6 +56,7 @@ const CHARACTERS = [
       ],
     },
     personality: 'nervous',
+    theme: 'space',
     colors: { primary: '#88ccff', secondary: '#4488cc', skin: '#ffcc99', eye: '#ffffff', pupil: '#224466' },
   },
   {
@@ -114,6 +115,7 @@ const CHARACTERS = [
       ],
     },
     personality: 'enthusiastic',
+    theme: 'egypt',
     colors: { primary: '#ff9966', secondary: '#cc6633', skin: '#ffcc99', eye: '#ffffff', pupil: '#663322' },
   },
   {
@@ -172,6 +174,7 @@ const CHARACTERS = [
       ],
     },
     personality: 'stoic',
+    theme: 'medieval',
     colors: { primary: '#aabbcc', secondary: '#667788', skin: '#ddbb99', eye: '#ffffff', pupil: '#334455' },
   },
   {
@@ -230,6 +233,7 @@ const CHARACTERS = [
       ],
     },
     personality: 'mysterious',
+    theme: 'cyberpunk',
     colors: { primary: '#6644aa', secondary: '#442288', skin: '#ccbbdd', eye: '#ffcc00', pupil: '#221144' },
   },
   {
@@ -288,6 +292,7 @@ const CHARACTERS = [
       ],
     },
     personality: 'dramatic',
+    theme: 'japanese',
     colors: { primary: '#ff66aa', secondary: '#cc4488', skin: '#ffddcc', eye: '#ffffff', pupil: '#661144' },
   },
   {
@@ -346,6 +351,7 @@ const CHARACTERS = [
       ],
     },
     personality: 'patient',
+    theme: 'steampunk',
     colors: { primary: '#88aa88', secondary: '#557755', skin: '#ccbb99', eye: '#ffffff', pupil: '#224422' },
   },
   {
@@ -404,6 +410,7 @@ const CHARACTERS = [
       ],
     },
     personality: 'calm',
+    theme: 'ocean',
     colors: { primary: '#5599cc', secondary: '#3377aa', skin: '#ccddcc', eye: '#ffffff', pupil: '#113355' },
   },
   {
@@ -462,6 +469,7 @@ const CHARACTERS = [
       ],
     },
     personality: 'smug',
+    theme: 'wildwest',
     colors: { primary: '#dd8844', secondary: '#bb6622', skin: '#ffcc99', eye: '#ffffff', pupil: '#553311' },
   },
   {
@@ -520,6 +528,7 @@ const CHARACTERS = [
       ],
     },
     personality: 'ominous',
+    theme: 'crystal',
     colors: { primary: '#882222', secondary: '#551111', skin: '#ddbbbb', eye: '#ff4444', pupil: '#220000' },
   },
   {
@@ -578,6 +587,7 @@ const CHARACTERS = [
       ],
     },
     personality: 'serious',
+    theme: 'artdeco',
     colors: { primary: '#ffcc00', secondary: '#cc9900', skin: '#ffdd99', eye: '#ff6600', pupil: '#332200' },
   },
 ];
