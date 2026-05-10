@@ -32,6 +32,7 @@ class Store {
         audioEnabled: true,
         miniGamesEnabled: true,
         animationSpeed: 1,
+        bossThemeEnabled: true,
       },
       selectedCharacter: null,
       customDifficulty: 5,

@@ -10,6 +10,7 @@ const SettingsScreen = {
     this.settings = { ...store.get('settings') };
     if (this.settings.musicVolume == null) this.settings.musicVolume = 0.5;
     if (this.settings.sfxVolume == null) this.settings.sfxVolume = 0.5;
+    if (this.settings.bossThemeEnabled == null) this.settings.bossThemeEnabled = true;
     this.editingOption = null;
     this.editText = '';
     this.confirmReset = false;
@@ -53,7 +54,7 @@ const SettingsScreen = {
     const cols = ThemeManager.getCurrentColors();
     if (Layout.isPortrait) {
       const panelX = (Layout.W - 720) / 2;
-      PixiPremiumScene.panel(this.pixiContainer, panelX, 132, 720, 270, { accentAlpha: 0.48 });
+      PixiPremiumScene.panel(this.pixiContainer, panelX, 132, 720, 330, { accentAlpha: 0.48 });
       this.sectionTitle(panelX + 32, 160, 'Audio Mix', 'Balanced sliders with no hidden hitboxes');
 
       this.addSlider(panelX + 40, 236, 560, 'Music Volume', this.settings.musicVolume, (value) => {
@@ -78,8 +79,27 @@ const SettingsScreen = {
         this.saveSettings();
       });
       this.pixiContainer.addChild(toggle);
+
+      const bossLabel = PixiPremiumScene.text('Boss World Theme', { fontSize: 17, fontWeight: '800', fill: cols.text });
+      bossLabel.x = panelX + 40;
+      bossLabel.y = 400;
+      PixiPremiumScene.fit(bossLabel, 200, 0.62);
+      this.pixiContainer.addChild(bossLabel);
+      const bossToggle = new PixiToggle({ width: 58, height: 24, value: this.settings.bossThemeEnabled !== false, cols });
+      bossToggle.x = panelX + 620;
+      bossToggle.y = 400;
+      bossToggle.onChange((value) => {
+        this.settings.bossThemeEnabled = value;
+        this.saveSettings();
+      });
+      this.pixiContainer.addChild(bossToggle);
+      const bossHint = PixiPremiumScene.text('Auto-switch theme when fighting a boss', { fontSize: 14, fill: PixiPremiumScene.alpha(cols.text, '77') });
+      bossHint.x = panelX + 40;
+      bossHint.y = 430;
+      PixiPremiumScene.fit(bossHint, 500, 0.55);
+      this.pixiContainer.addChild(bossHint);
     } else {
-      PixiPremiumScene.panel(this.pixiContainer, 76, 132, 552, 270, { accentAlpha: 0.48 });
+      PixiPremiumScene.panel(this.pixiContainer, 76, 132, 552, 330, { accentAlpha: 0.48 });
       this.sectionTitle(108, 160, 'Audio Mix', 'Balanced sliders with no hidden hitboxes');
 
       this.addSlider(116, 236, 472, 'Music Volume', this.settings.musicVolume, (value) => {
@@ -104,6 +124,25 @@ const SettingsScreen = {
         this.saveSettings();
       });
       this.pixiContainer.addChild(toggle);
+
+      const bossLabel = PixiPremiumScene.text('Boss World Theme', { fontSize: 17, fontWeight: '800', fill: cols.text });
+      bossLabel.x = 116;
+      bossLabel.y = 400;
+      PixiPremiumScene.fit(bossLabel, 200, 0.62);
+      this.pixiContainer.addChild(bossLabel);
+      const bossToggle = new PixiToggle({ width: 58, height: 24, value: this.settings.bossThemeEnabled !== false, cols });
+      bossToggle.x = 548;
+      bossToggle.y = 400;
+      bossToggle.onChange((value) => {
+        this.settings.bossThemeEnabled = value;
+        this.saveSettings();
+      });
+      this.pixiContainer.addChild(bossToggle);
+      const bossHint = PixiPremiumScene.text('Auto-switch theme when fighting a boss', { fontSize: 14, fill: PixiPremiumScene.alpha(cols.text, '77') });
+      bossHint.x = 116;
+      bossHint.y = 430;
+      PixiPremiumScene.fit(bossHint, 400, 0.55);
+      this.pixiContainer.addChild(bossHint);
     }
   },
 
@@ -111,7 +150,7 @@ const SettingsScreen = {
     const cols = ThemeManager.getCurrentColors();
     if (Layout.isPortrait) {
       const panelX = (Layout.W - 720) / 2;
-      const panelY = 432;
+      const panelY = 492;
       PixiPremiumScene.panel(this.pixiContainer, panelX, panelY, 720, 270, { accentAlpha: 0.48 });
       this.sectionTitle(panelX + 32, panelY + 28, 'Players', 'Readable names with inline editing');
       this.nameRow(panelX + 40, panelY + 98, 'Player 1 Name', 'whitePlayer', store.get('whitePlayer') || 'Player 1', 640);
@@ -126,7 +165,7 @@ const SettingsScreen = {
       PixiPremiumScene.fit(note, 620);
       this.pixiContainer.addChild(note);
     } else {
-      PixiPremiumScene.panel(this.pixiContainer, 660, 132, 544, 270, { accentAlpha: 0.48 });
+      PixiPremiumScene.panel(this.pixiContainer, 660, 132, 544, 330, { accentAlpha: 0.48 });
       this.sectionTitle(692, 160, 'Players', 'Readable names with inline editing');
       this.nameRow(700, 230, 'Player 1 Name', 'whitePlayer', store.get('whitePlayer') || 'Player 1');
       this.nameRow(700, 310, 'Player 2 Name', 'blackPlayer', store.get('blackPlayer') || 'Player 2');
@@ -145,7 +184,7 @@ const SettingsScreen = {
   buildActionPanel() {
     if (Layout.isPortrait) {
       const panelX = (Layout.W - 720) / 2;
-      const panelY = 732;
+      const panelY = 792;
       const cardW = 660;
       const cardH = 82;
       const cardGap = 14;
@@ -185,15 +224,15 @@ const SettingsScreen = {
         });
       });
     } else {
-      PixiPremiumScene.panel(this.pixiContainer, 76, 432, 1128, 230, { accentAlpha: 0.42 });
-      this.sectionTitle(108, 460, 'Game Tools', 'Practice, controls, and save maintenance');
+      PixiPremiumScene.panel(this.pixiContainer, 76, 492, 1128, 230, { accentAlpha: 0.42 });
+      this.sectionTitle(108, 520, 'Game Tools', 'Practice, controls, and save maintenance');
       const actions = [
         { x: 174, label: 'Practice Mini-Games', sub: 'Try every capture challenge', icon: 'play', action: () => switchScreen('miniGamePractice') },
         { x: 498, label: 'Controls', sub: 'Tune mini-game sensitivity', icon: 'settings', action: () => switchScreen('controls') },
         { x: 822, label: 'Reset Progress', sub: 'Clear story slots and stats', icon: 'lock', action: () => { this.confirmReset = true; this.build(); } },
       ];
       actions.forEach(action => {
-        PixiPremiumScene.card(this.pixiContainer, action.x, 522, 284, 92, {
+        PixiPremiumScene.card(this.pixiContainer, action.x, 582, 284, 92, {
           onClick: action.action,
           activeColor: action.label === 'Reset Progress' ? '#ff6578' : ThemeManager.getCurrentColors().accent,
           draw: (card) => {
