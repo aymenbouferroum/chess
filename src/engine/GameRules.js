@@ -49,6 +49,11 @@ class GameRules {
   }
 
   static getGameStatus(board, color) {
+    const king = board.findKing(color);
+    if (!king) {
+      return { status: 'checkmate', winner: color === 'white' ? 'black' : 'white' };
+    }
+
     const moves = this.getLegalMoves(board, color);
     if (moves.length === 0) {
       if (board.inCheck) return { status: 'checkmate', winner: color === 'white' ? 'black' : 'white' };

@@ -12,11 +12,24 @@ class PixiDialogueBubble extends PIXI.Container {
   _build(config) {
     const { name, text, colors, cols } = config;
     const isPortrait = Layout.isPortrait;
-    const bubbleW = isPortrait ? 300 : 260;
-    const padding = 12;
-    const nameSize = 13;
-    const textSize = 15;
-    const maxTextW = bubbleW - padding * 2;
+    const portraitSize = isPortrait ? 64 : 48;
+    const bubbleW = isPortrait ? 520 : 260;
+    const padding = isPortrait ? 16 : 12;
+    const nameSize = isPortrait ? 18 : 13;
+    const textSize = isPortrait ? 18 : 15;
+
+    const portraitCanvas = SpriteGen.generateCharacterSprite(colors, portraitSize);
+    const portraitTexture = PIXI.Texture.from({ resource: portraitCanvas, scaleMode: 'nearest' });
+    const portrait = new PIXI.Sprite(portraitTexture);
+    portrait.x = padding;
+    portrait.y = padding;
+
+    const portraitBorder = new PIXI.Graphics();
+    portraitBorder.roundRect(padding - 2, padding - 2, portraitSize + 4, portraitSize + 4, 4)
+      .stroke({ color: PixiColorUtil.hexToNum(colors.primary), alpha: 0.7, width: 2 });
+
+    const textOffsetX = padding + portraitSize + padding;
+    const maxTextW = bubbleW - textOffsetX - padding;
 
     const nameText = new PIXI.Text({
       text: name,
@@ -27,7 +40,7 @@ class PixiDialogueBubble extends PIXI.Container {
         fill: PixiColorUtil.hexToNum(colors.primary),
       },
     });
-    nameText.x = padding;
+    nameText.x = textOffsetX;
     nameText.y = padding;
 
     const bodyText = new PIXI.Text({
@@ -41,7 +54,7 @@ class PixiDialogueBubble extends PIXI.Container {
         lineHeight: textSize + 4,
       },
     });
-    bodyText.x = padding;
+    bodyText.x = textOffsetX;
     bodyText.y = padding + nameSize + 6;
 
     const maxBodyH = (textSize + 4) * 4;
@@ -49,7 +62,9 @@ class PixiDialogueBubble extends PIXI.Container {
       bodyText.height = maxBodyH;
     }
 
-    const bubbleH = padding + nameSize + 6 + Math.min(bodyText.height, maxBodyH) + padding;
+    const textContentH = padding + nameSize + 6 + Math.min(bodyText.height, maxBodyH) + padding;
+    const portraitContentH = padding + portraitSize + padding;
+    const bubbleH = Math.max(textContentH, portraitContentH);
 
     const bg = new PIXI.Graphics();
     const fillColor = PixiColorUtil.hexToNum(colors.secondary);
@@ -71,12 +86,14 @@ class PixiDialogueBubble extends PIXI.Container {
     }
 
     this.addChild(bg);
+    this.addChild(portraitBorder);
+    this.addChild(portrait);
     this.addChild(nameText);
     this.addChild(bodyText);
 
     if (isPortrait) {
       this.x = (Layout.W - bubbleW) / 2;
-      this.y = 20;
+      this.y = 170;
     } else {
       this.x = 720;
       this.y = 340;

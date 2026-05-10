@@ -20,7 +20,11 @@ const PixiBoardRenderer = {
       this.squareSize = Math.floor(maxBoard / 8);
       const boardPx = this.squareSize * 8;
       this.boardOffsetX = Math.floor((Layout.W - boardPx) / 2);
-      this.boardOffsetY = 280;
+      const topPanelBottom = 40 + 120;
+      const statusBarTop = Layout.H - 70;
+      const contentH = boardPx + 20 + 120;
+      const margin = Math.floor((statusBarTop - topPanelBottom - contentH) / 2);
+      this.boardOffsetY = topPanelBottom + margin;
       this.PIECE_SIZE = Math.floor(this.squareSize * 0.9);
     } else {
       this.squareSize = 80;
