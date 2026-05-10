@@ -1,7 +1,8 @@
 /**
- * BotPersonality - Stockfish.js wrapper for Chess 2.0
+ * BotPersonality - Stockfish wrapper for Chess 2.0
  *
- * Wraps the Stockfish 18 (lite) engine and exposes three personalities:
+ * Uses server-side Stockfish API (Telegram/web) or local WASM (Electron).
+ * Exposes three personalities:
  *   Noob         - Skill Level 0,  depth 1, 30% chance of random move
  *   Intermediate - Skill Level 5,  depth 5
  *   Pro          - Skill Level 20, depth 20
@@ -9,6 +10,8 @@
 class BotPersonality {
   static engine = null;
   static ready = false;
+  static useServerAPI = false;
+  static serverAPIUrl = '/api/stockfish';
   static outputBuffer = [];
   static pendingResolve = null;
   static pendingReject = null;
@@ -35,31 +38,42 @@ class BotPersonality {
     const factory = script ? script._exports : null;
 
     if (!factory) {
-      throw new Error('Stockfish factory not found. Is stockfish.js loaded?');
+      // WASM not available (Telegram/web) — use server API
+      this.useServerAPI = true;
+      this.ready = true;
+      return true;
     }
 
     const basePath = script.src.replace(/\/[^\/]+$/, '/');
 
-    this.engine = factory({
-      locateFile: (file) => basePath + file,
-      listener: (line) => this._onEngineOutput(line),
-    });
+    try {
+      this.engine = factory({
+        locateFile: (file) => basePath + file,
+        listener: (line) => this._onEngineOutput(line),
+      });
 
-    // Wait until the WASM module has finished initialising
-    if (this.engine.ready && typeof this.engine.ready.then === 'function') {
-      await this.engine.ready;
-    } else {
-      await this._pollReady();
+      // Wait until the WASM module has finished initialising
+      if (this.engine.ready && typeof this.engine.ready.then === 'function') {
+        await this.engine.ready;
+      } else {
+        await this._pollReady();
+      }
+
+      // UCI handshake
+      this._send('uci');
+      await this._waitFor('uciok');
+
+      this._send('isready');
+      await this._waitFor('readyok');
+
+      this.ready = true;
+    } catch (e) {
+      // WASM init failed — fall back to server API
+      console.warn('Stockfish WASM init failed, using server API:', e.message);
+      this.engine = null;
+      this.useServerAPI = true;
+      this.ready = true;
     }
-
-    // UCI handshake
-    this._send('uci');
-    await this._waitFor('uciok');
-
-    this._send('isready');
-    await this._waitFor('readyok');
-
-    this.ready = true;
     return true;
   }
 
@@ -81,7 +95,12 @@ class BotPersonality {
       return legalMoves[Math.floor(Math.random() * legalMoves.length)] || null;
     }
 
-    // Configure Stockfish
+    // Server API path (Telegram/web)
+    if (this.useServerAPI) {
+      return this._getMoveFromServer(fen, profile, legalMoves);
+    }
+
+    // Local WASM path (Electron)
     this._send(`setoption name Skill Level value ${profile.skillLevel}`);
     this._send(`setoption name UCI_LimitStrength value ${profile.skillLevel < 20 ? 'true' : 'false'}`);
 
@@ -97,6 +116,36 @@ class BotPersonality {
     if (!bestMoveUci) return null;
 
     return this._uciToMove(bestMoveUci, legalMoves);
+  }
+
+  static async _getMoveFromServer(fen, profile, legalMoves) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
+    try {
+      const response = await fetch(this.serverAPIUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fen,
+          skillLevel: profile.skillLevel,
+          depth: profile.depth,
+          movetime: profile.movetime,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      if (!data.bestmove) return null;
+
+      return this._uciToMove(data.bestmove, legalMoves);
+    } catch (e) {
+      clearTimeout(timeout);
+      return null;
+    }
   }
 
   /* ------------------------------------------------------------------ */
