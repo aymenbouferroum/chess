@@ -69,6 +69,9 @@ const GameScreen = {
     this.gameplayMode = store.get('customGameplayMode') !== false;
     if (this.mode === 'story') {
       this.currentCharacter = store.get('selectedCharacter');
+      if (typeof this.currentCharacter === 'string') {
+        this.currentCharacter = CharacterManager.getCharacter(this.currentCharacter);
+      }
       const charLevel = this.currentCharacter ? this.currentCharacter.level : 1;
       const save = store.getActiveSave();
       const tier = save ? save.difficultyTier : 'beginner';
@@ -112,6 +115,13 @@ const GameScreen = {
     if (typeof PixiGameOverOverlay !== 'undefined') {
       PixiGameOverOverlay.init(this);
     }
+
+    this._dialogueBubble = null;
+    if (this.mode === 'story' && this.currentCharacter && typeof DialogueManager !== 'undefined') {
+      DialogueManager.init(this.currentCharacter, (text, character) => {
+        this._showDialogueBubble(text, character);
+      });
+    }
   },
 
   destroy() {
@@ -127,6 +137,13 @@ const GameScreen = {
     }
     if (typeof PixiGameOverOverlay !== 'undefined') {
       PixiGameOverOverlay.destroy();
+    }
+    if (typeof DialogueManager !== 'undefined') {
+      DialogueManager.destroy();
+    }
+    if (this._dialogueBubble) {
+      this._dialogueBubble.dismiss();
+      this._dialogueBubble = null;
     }
     const canvas = document.getElementById('gameCanvas');
     if (canvas) canvas.style.pointerEvents = 'auto';
@@ -958,6 +975,10 @@ const GameScreen = {
 
       audioManager.playCapture();
       audioManager.playScreenShake();
+
+      if (this.mode === 'story' && typeof DialogueManager !== 'undefined') {
+        DialogueManager.onCapture(this.turn, captured, this.aiColor);
+      }
     } else {
       audioManager.playMove(piece ? piece.type : null);
       const theme = ThemeManager.getTheme(store.get('theme'));
@@ -1046,6 +1067,9 @@ const GameScreen = {
 
     if (this.gameStatus === 'check') {
       audioManager.playCheck();
+      if (this.mode === 'story' && typeof DialogueManager !== 'undefined') {
+        DialogueManager.onCheck(this.turn, this.aiColor);
+      }
     }
     if (typeof audioManager.setSuspense === 'function') {
       audioManager.setSuspense(this.gameStatus === 'check' && !this.gameOver);
@@ -1069,10 +1093,21 @@ const GameScreen = {
     this.lockedTiles = [];
     this.pendingRevertMove = null;
     this.finishTurnStatus();
+
+    if (this.mode === 'story' && typeof DialogueManager !== 'undefined') {
+      if (this.moveHistory.length === 1) {
+        DialogueManager.onGameStart();
+      }
+      DialogueManager.onMoveComplete(this.moveHistory.length, this.board, this.aiColor);
+    }
   },
 
   doAIMove() {
     this.aiThinking = true;
+
+    if (this.mode === 'story' && typeof DialogueManager !== 'undefined') {
+      DialogueManager.onAIThinkStart();
+    }
 
     // Safety timeout: if AI takes longer than 10 seconds, force-reset
     const safetyTimer = setTimeout(() => {
@@ -1129,6 +1164,10 @@ const GameScreen = {
           move = legalMoves.length === 1 ? legalMoves[0] : legalMoves[Math.floor(Math.random() * legalMoves.length)];
         }
 
+        if (this.mode === 'story' && typeof DialogueManager !== 'undefined') {
+          DialogueManager.onAIThinkEnd();
+        }
+
         const piece = this.board.grid[move.from.row][move.from.col];
         const captured = this.board.grid[move.to.row][move.to.col];
         const isCapture = !!captured;
@@ -1165,6 +1204,23 @@ const GameScreen = {
       }
       clearTimeout(safetyTimer);
     }, 500 + Math.random() * 700);
+  },
+
+  _showDialogueBubble(text, character) {
+    if (!PixiApp.stage || typeof PixiDialogueBubble === 'undefined') return;
+    if (this._dialogueBubble) {
+      this._dialogueBubble.dismiss();
+    }
+    const bubble = new PixiDialogueBubble({
+      name: character.name,
+      text: text,
+      colors: character.colors,
+      cols: ThemeManager.getTheme(store.get('theme')).colors,
+      duration: 5000,
+    });
+    PixiApp.stage.addChild(bubble);
+    PixiApp.stage.sortableChildren = true;
+    this._dialogueBubble = bubble;
   },
 
   surrender() {

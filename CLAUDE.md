@@ -227,3 +227,42 @@ When working on UI changes:
 - Press **F5** in the running app to capture a screenshot immediately
 - Both `.screenshot-trigger` and `dev-screenshot.png` are in `.gitignore`
 - Used by Claude Code for visual verification during development
+
+### Dev Automated Testing (CDP)
+Launch the app with `npx electron . --remote-debugging-port=9333` to enable programmatic testing via Chrome DevTools Protocol. The `dev/` folder (gitignored) contains reusable testing tools.
+
+**Quick test commands:**
+```bash
+# Launch with debugging
+npx electron . --remote-debugging-port=9333
+
+# Run a single JS expression in the game
+node dev/cdp.js "store.get('screen')"
+node dev/cdp.js "GameScreen.characterLevel"
+
+# Run predefined test scenarios
+node dev/test-game.js state          # Show current game state
+node dev/test-game.js story-setup    # Start story mode vs Pawnie
+node dev/test-game.js move-e4        # Execute e2-e4
+node dev/test-game.js move-random    # Execute a random legal move
+node dev/test-game.js difficulty     # Print AI difficulty table for all tiers
+node dev/test-game.js dialogue       # Test dialogue bubble triggers
+node dev/test-game.js navigate home  # Navigate to a screen
+node dev/test-game.js all            # Run all verification tests
+
+# With options
+node dev/test-game.js story-setup beginner pawnie     # tier + boss
+node dev/test-game.js story-setup rookie grandmasterx # any combo
+```
+
+**Using `dev/cdp.js` as a module (for custom test scripts):**
+```js
+const cdp = require('./dev/cdp');
+const result = await cdp.eval('GameScreen.mode');
+```
+
+**Notes:**
+- Uses raw TCP WebSocket (no npm dependencies needed)
+- Port 9222 is often busy; 9333 is the default
+- `dev/` and `_test_*` files are gitignored
+- Combine with `.screenshot-trigger` for visual verification after programmatic actions

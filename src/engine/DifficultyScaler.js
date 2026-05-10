@@ -1,7 +1,7 @@
 const DIFFICULTY_TIERS = {
-  rookie:       { label: 'Rookie',       elo: '<400',     minAi: 1, maxAi: 2,  desc: 'Gentle introduction to the game' },
-  beginner:     { label: 'Beginner',     elo: '400-800',   minAi: 1, maxAi: 4,  desc: 'Learning the ropes' },
-  intermediate: { label: 'Intermediate', elo: '800-1200',  minAi: 2, maxAi: 6,  desc: 'Solid fundamentals' },
+  rookie:       { label: 'Rookie',       elo: '<400',     minAi: 0, maxAi: 2,  desc: 'Gentle introduction to the game' },
+  beginner:     { label: 'Beginner',     elo: '400-800',   minAi: 0, maxAi: 4,  desc: 'Learning the ropes' },
+  intermediate: { label: 'Intermediate', elo: '800-1200',  minAi: 1, maxAi: 6,  desc: 'Solid fundamentals' },
   advanced:     { label: 'Advanced',     elo: '1200-1600', minAi: 3, maxAi: 8,  desc: 'Tactical challenges await' },
   expert:       { label: 'Expert',       elo: '1600-2000', minAi: 5, maxAi: 10, desc: 'The ultimate test' },
   madness:      { label: 'Madness',      elo: '???',       minAi: 8, maxAi: 12, desc: 'Impossible opponents' },

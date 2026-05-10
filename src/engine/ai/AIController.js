@@ -1,5 +1,6 @@
 class AIController {
   static LEVEL_CONFIG = {
+    0:  { depth: 1, noise: 0.70, name: 'Newcomer',     stockfish: false },
     1:  { depth: 2, noise: 0.45, name: 'Beginner',     stockfish: false },
     2:  { depth: 3, noise: 0.30, name: 'Novice',       stockfish: false },
     3:  { depth: 3, noise: 0.15, name: 'Apprentice',   stockfish: false },
