@@ -54,59 +54,67 @@ const MiniGamePractice = {
     this.pixiContainer = PixiPremiumScene.root('Mini-Game Practice', 'Pick a capture challenge and launch immediately', { footerHint: 'Practice runs use the same mini-game overlay and stats callbacks' });
     PixiScreenManager.setScreenContainer(this.pixiContainer);
 
+    const s = Layout.uiScale || 1;
     const portrait = Layout.isPortrait;
     const gridCols = portrait ? 3 : 5;
+    const gap = 18;
     const gridRows = Math.ceil(this.games.length / gridCols);
+    const cardW = Math.floor((Layout.W - 80 - (gridCols - 1) * gap) / gridCols);
+    const cardH = Math.round(150 * s);
+    const rowH = cardH + 20;
     const panelX = portrait ? 32 : 54;
     const panelW = portrait ? (Layout.W - 64) : 1172;
-    const panelH = portrait ? (gridRows * 170 + 50) : 568;
+    const panelH = gridRows * rowH + 50;
     PixiPremiumScene.panel(this.pixiContainer, panelX, 126, panelW, panelH, { accentAlpha: 0.36 });
-    this.games.forEach((game, i) => this.card(game, i));
+    this.games.forEach((game, i) => this.card(game, i, { gridCols, gap, cardW, cardH, rowH, s }));
     const btnY = Layout.H - 82;
     PixiPremiumScene.button(this.pixiContainer, 36, btnY, 160, 44, 'Back', () => switchScreen('settings'), { icon: 'back' });
   },
 
-  card(game, i) {
+  card(game, i, opts) {
     const cols = ThemeManager.getCurrentColors();
     const portrait = Layout.isPortrait;
-    const gridCols = portrait ? 3 : 5;
-    const cardW = portrait ? Math.floor((Layout.W - 64 - 40 - (gridCols - 1) * 18) / gridCols) : 208;
-    const cardH = 150;
-    const gapX = portrait ? 18 : 18;
+    const { gridCols, gap, cardW, cardH, rowH, s } = opts;
     const col = i % gridCols;
     const row = Math.floor(i / gridCols);
-    const x = (portrait ? 52 : 86) + col * (cardW + gapX);
-    const y = 154 + row * 170;
+    const gridX = Math.round((Layout.W - gridCols * cardW - (gridCols - 1) * gap) / 2);
+    const x = gridX + col * (cardW + gap);
+    const y = 154 + row * rowH;
+    const thumbW = cardW - 28;
+    const thumbH = Math.round(thumbW * 0.5);
+    const titleY = thumbH + 26;
+    const playSize = Math.round(34 * s);
+    const descY = titleY + Math.round(22 * s);
     PixiPremiumScene.card(this.pixiContainer, x, y, cardW, cardH, {
       activeColor: cols.accent,
       onClick: () => this.startGame(game.type),
       draw: (card) => {
         const thumb = new PIXI.Sprite(PixiPremiumAssets.minigame(game.key));
-        thumb.width = cardW - 28;
-        thumb.height = 90;
+        thumb.width = thumbW;
+        thumb.height = thumbH;
         thumb.x = 14;
         thumb.y = 14;
         card.addChild(thumb);
 
-        const title = PixiPremiumScene.text(game.name, { fontSize: 17, fontWeight: '900', fill: cols.text });
+        const title = PixiPremiumScene.text(game.name, { fontSize: Math.round(17 * s), fontWeight: '900', fill: cols.text });
         title.x = 16;
-        title.y = 112;
-        PixiPremiumScene.fit(title, cardW - 60, 0.54);
+        title.y = titleY;
+        PixiPremiumScene.fit(title, cardW - playSize - 48, 0.54);
         card.addChild(title);
 
         const play = new PIXI.Sprite(PixiPremiumAssets.icon('play'));
-        play.width = 26;
-        play.height = 26;
-        play.x = cardW - 42;
-        play.y = 109;
+        play.width = playSize;
+        play.height = playSize;
+        play.x = cardW - playSize - 16;
+        play.y = titleY - 4;
         card.addChild(play);
 
         const desc = PixiPremiumScene.text(this.gameDescriptions[game.key] || 'Practice this challenge.', {
-          fontSize: 12,
+          fontSize: Math.round(12 * s),
           fill: PixiPremiumScene.alpha(cols.text, '88'),
         });
         desc.x = 16;
-        desc.y = 132;
+        desc.y = descY;
         PixiPremiumScene.fit(desc, cardW - 32, 0.45);
         card.addChild(desc);
       },
