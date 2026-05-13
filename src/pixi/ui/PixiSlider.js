@@ -52,6 +52,10 @@ class PixiSlider extends PIXI.Container {
     this._valueText.y = -18;
     this.addChild(this._valueText);
 
+    if (this.config.showValue === false) {
+      this._valueText.visible = false;
+    }
+
     this.eventMode = 'static';
     this.cursor = 'pointer';
     this.hitArea = new PIXI.Rectangle(0, -20, this.config.width, this.config.height + 30);
@@ -163,8 +167,12 @@ class PixiSlider extends PIXI.Container {
       .fill(knobHighlight);
 
     // Value text
-    const displayVal = c.step < 1 ? this._value.toFixed(1) : Math.round(this._value);
-    this._valueText.text = displayVal + (c.unit || '');
+    if (this.config.formatValue) {
+      this._valueText.text = this.config.formatValue(this._value);
+    } else {
+      const displayVal = c.step < 1 ? this._value.toFixed(1) : Math.round(this._value);
+      this._valueText.text = displayVal + (c.unit || '');
+    }
   }
 
   _onDragStart(e) {
