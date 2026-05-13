@@ -115,7 +115,6 @@ class MiniGameManager {
     this.challengeResult = null;
     this.botTimer = 0;
     this.nextBotAction = 0.3 + Math.random() * 0.3;
-    this._survivalTimer = 0;
 
     const totalWeight = allowedGames.reduce((s, g) => s + g.weight, 0);
     let r = Math.random() * totalWeight;
@@ -254,32 +253,6 @@ class MiniGameManager {
     const theme = ThemeManager.getTheme(store.get('theme'));
     const cols = theme.colors;
 
-    // When AI is the defender, show survival overlay instead of full minigame
-    if (this.challengePlayerIsAI && !this.currentGame.done) {
-      this._survivalTimer = (this._survivalTimer || 0) + 1 / 60;
-      ctx.fillStyle = 'rgba(0,0,0,0.60)';
-      ctx.fillRect(0, 0, Layout.W, Layout.H);
-      const bossName = (typeof GameScreen !== 'undefined' && GameScreen.currentCharacter && typeof GameScreen.currentCharacter === 'object')
-        ? GameScreen.currentCharacter.name : 'Opponent';
-      const blink = Math.sin(this._survivalTimer * 4) > 0 ? 1 : 0.4;
-      ctx.save();
-      ctx.globalAlpha = blink * globalAlpha;
-      ctx.fillStyle = cols.accent || '#ffcc00';
-      ctx.font = 'bold 32px "Pixelify Sans", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(bossName + ' is trying to survive!', Layout.cx, Layout.cy - 20);
-      ctx.restore();
-      ctx.fillStyle = cols.text + 'aa';
-      ctx.font = '16px "Pixelify Sans", sans-serif';
-      ctx.textAlign = 'center';
-      const dots = '.'.repeat(Math.floor(this._survivalTimer * 2) % 4);
-      ctx.fillText('Playing minigame' + dots, Layout.cx, Layout.cy + 25);
-      ctx.restore();
-      this.animFrame = requestAnimationFrame(() => this.gameLoop());
-      return;
-    }
-
     // Background dim
     ctx.fillStyle = 'rgba(0,0,0,0.70)';
     ctx.fillRect(0, 0, Layout.W, Layout.H);
@@ -388,6 +361,27 @@ class MiniGameManager {
     }
 
     ctx.restore();
+
+    if (this.challengePlayerIsAI && !this.currentGame.done) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.fillRect(0, 0, Layout.W, 50);
+
+      const blink = Math.floor(Date.now() / 500) % 2 === 0;
+      if (blink) {
+        ctx.fillStyle = '#ffaa44';
+        ctx.font = 'bold 18px "Pixelify Sans", sans-serif';
+        ctx.textAlign = 'center';
+        const bossName = (typeof GameScreen !== 'undefined' && GameScreen.currentCharacter && typeof GameScreen.currentCharacter === 'object')
+          ? GameScreen.currentCharacter.name : 'Boss';
+        ctx.fillText(bossName + ' is trying to survive!', Layout.W / 2, 32);
+      }
+
+      const pulse = 0.3 + 0.3 * Math.sin(Date.now() / 300);
+      ctx.strokeStyle = `rgba(255, 170, 68, ${pulse})`;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(ox, oy, ow, oh);
+    }
+
     ctx.restore();
 
     this.animFrame = requestAnimationFrame(() => this.gameLoop());
@@ -438,7 +432,7 @@ class MiniGameManager {
 
   handleClick(x, y) {
     if (!this.active || !this.currentGame) return;
-    // Only accept clicks during entrance animation and gameplay, not during fade-out
+    if (this.challengePlayerIsAI && this.currentGame && !this.currentGame.done) return;
     if (this.currentGame.done && this.doneTime) return;
 
     // Pass screen coordinates to the game
@@ -449,6 +443,7 @@ class MiniGameManager {
 
   handleKey(key) {
     if (!this.active || !this.currentGame) return;
+    if (this.challengePlayerIsAI && this.currentGame && !this.currentGame.done) return;
     if (this.currentGame.handleKey) {
       this.currentGame.handleKey(key);
     }
