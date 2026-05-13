@@ -57,7 +57,6 @@ const SettingsScreen = {
 
     const btnY = Layout.isPortrait ? Layout.H - Layout.SAFE_BOTTOM - 48 : 718;
     PixiPremiumScene.button(this.pixiContainer, 36, btnY, 160, 44, 'Back', () => switchScreen('home'), { icon: 'back' });
-    PixiPremiumScene.button(this.pixiContainer, Layout.W - 196, btnY, 160, 44, 'Themes', () => switchScreen('themeSelect', { returnTo: 'settings' }), { icon: 'spark' });
     if (this.feedbackOpen) this.buildFeedbackModal();
     if (this.confirmReset) this.buildResetModal();
   },
@@ -200,35 +199,43 @@ const SettingsScreen = {
       const cardW = 660;
       const cardH = 82;
       const cardGap = 14;
-      const panelH = 80 + (cardH + cardGap) * 4;
+      const panelH = 80 + (cardH + cardGap) * 5;
       PixiPremiumScene.panel(this.pixiContainer, panelX, panelY, 720, panelH, { accentAlpha: 0.42 });
       this.sectionTitle(panelX + 32, panelY + 28, 'Game Tools', 'Practice, controls, and save maintenance');
       const actions = [
         { label: 'Practice Mini-Games', sub: 'Try every capture challenge', icon: 'play', action: () => switchScreen('miniGamePractice') },
         { label: 'Controls', sub: 'Tune mini-game sensitivity', icon: 'settings', action: () => switchScreen('controls') },
+        { label: 'Themes', sub: 'Pick a color scheme', icon: 'spark', action: () => switchScreen('themeSelect', { returnTo: 'settings' }) },
         { label: 'Send Feedback', sub: 'Suggest a feature or report a problem', icon: 'spark', action: () => { this.feedbackOpen = true; this.feedbackCategory = 'feature'; this.feedbackSending = false; this.feedbackDone = false; this.build(); this._createTextarea(); } },
-        { label: 'Reset Progress', sub: 'Clear story slots and stats', icon: 'lock', action: () => { this.confirmReset = true; this.build(); } },
+        { label: 'Reset Progress', sub: 'Clear story slots and stats', icon: 'lock', danger: true, action: () => { this.confirmReset = true; this.build(); } },
       ];
       actions.forEach((action, i) => {
         const cardX = panelX + 30;
         const cardY = panelY + 80 + i * (cardH + cardGap);
         PixiPremiumScene.card(this.pixiContainer, cardX, cardY, cardW, cardH, {
           onClick: action.action,
-          activeColor: action.label === 'Reset Progress' ? '#ff6578' : ThemeManager.getCurrentColors().accent,
+          activeColor: action.danger ? '#ff6578' : ThemeManager.getCurrentColors().accent,
           draw: (card) => {
             const cols = ThemeManager.getCurrentColors();
+            if (action.danger) {
+              const dangerBg = new PIXI.Graphics();
+              dangerBg.roundRect(2, 2, cardW - 4, cardH - 4, 6).fill({ color: PixiColorUtil.hexToNum('#ff6578'), alpha: 0.1 });
+              dangerBg.rect(0, 0, 3, cardH).fill({ color: PixiColorUtil.hexToNum('#ff6578'), alpha: 0.7 });
+              card.addChild(dangerBg);
+            }
             const icon = new PIXI.Sprite(PixiPremiumAssets.icon(action.icon));
             icon.width = 52;
             icon.height = 52;
             icon.x = 18;
             icon.y = 14;
+            if (action.danger) icon.tint = PixiColorUtil.hexToNum('#ff6578');
             card.addChild(icon);
-            const label = PixiPremiumScene.text(action.label, { fontSize: 20, fontWeight: '900', fill: cols.text });
+            const label = PixiPremiumScene.text(action.label, { fontSize: 20, fontWeight: '900', fill: action.danger ? '#ff6578' : cols.text });
             label.x = 84;
             label.y = 16;
             PixiPremiumScene.fit(label, cardW - 120);
             card.addChild(label);
-            const sub = PixiPremiumScene.text(action.sub, { fontSize: 14, fill: PixiPremiumScene.alpha(cols.text, '88') });
+            const sub = PixiPremiumScene.text(action.sub, { fontSize: 14, fill: PixiPremiumScene.alpha(action.danger ? '#ff6578' : cols.text, '88') });
             sub.x = 84;
             sub.y = 46;
             PixiPremiumScene.fit(sub, cardW - 120, 0.55);
@@ -239,33 +246,42 @@ const SettingsScreen = {
     } else {
       PixiPremiumScene.panel(this.pixiContainer, 76, 492, 1128, 230, { accentAlpha: 0.42 });
       this.sectionTitle(108, 520, 'Game Tools', 'Practice, controls, and save maintenance');
+      const lCardW = 200;
       const actions = [
-        { x: 120, label: 'Practice Mini-Games', sub: 'Try every capture challenge', icon: 'play', action: () => switchScreen('miniGamePractice') },
-        { x: 380, label: 'Controls', sub: 'Tune mini-game sensitivity', icon: 'settings', action: () => switchScreen('controls') },
-        { x: 640, label: 'Send Feedback', sub: 'Suggest or report', icon: 'spark', action: () => { this.feedbackOpen = true; this.feedbackCategory = 'feature'; this.feedbackSending = false; this.feedbackDone = false; this.build(); this._createTextarea(); } },
-        { x: 900, label: 'Reset Progress', sub: 'Clear story slots and stats', icon: 'lock', action: () => { this.confirmReset = true; this.build(); } },
+        { x: 96, label: 'Practice Mini-Games', sub: 'Capture challenges', icon: 'play', action: () => switchScreen('miniGamePractice') },
+        { x: 308, label: 'Controls', sub: 'Mini-game sensitivity', icon: 'settings', action: () => switchScreen('controls') },
+        { x: 520, label: 'Themes', sub: 'Pick a color scheme', icon: 'spark', action: () => switchScreen('themeSelect', { returnTo: 'settings' }) },
+        { x: 732, label: 'Send Feedback', sub: 'Suggest or report', icon: 'spark', action: () => { this.feedbackOpen = true; this.feedbackCategory = 'feature'; this.feedbackSending = false; this.feedbackDone = false; this.build(); this._createTextarea(); } },
+        { x: 944, label: 'Reset Progress', sub: 'Clear slots and stats', icon: 'lock', danger: true, action: () => { this.confirmReset = true; this.build(); } },
       ];
       actions.forEach(action => {
-        PixiPremiumScene.card(this.pixiContainer, action.x, 582, 244, 92, {
+        PixiPremiumScene.card(this.pixiContainer, action.x, 582, lCardW, 92, {
           onClick: action.action,
-          activeColor: action.label === 'Reset Progress' ? '#ff6578' : ThemeManager.getCurrentColors().accent,
+          activeColor: action.danger ? '#ff6578' : ThemeManager.getCurrentColors().accent,
           draw: (card) => {
             const cols = ThemeManager.getCurrentColors();
+            if (action.danger) {
+              const dangerBg = new PIXI.Graphics();
+              dangerBg.roundRect(2, 2, lCardW - 4, 88, 6).fill({ color: PixiColorUtil.hexToNum('#ff6578'), alpha: 0.1 });
+              dangerBg.rect(0, 0, 3, 92).fill({ color: PixiColorUtil.hexToNum('#ff6578'), alpha: 0.7 });
+              card.addChild(dangerBg);
+            }
             const icon = new PIXI.Sprite(PixiPremiumAssets.icon(action.icon));
             icon.width = 52;
             icon.height = 52;
             icon.x = 18;
             icon.y = 20;
+            if (action.danger) icon.tint = PixiColorUtil.hexToNum('#ff6578');
             card.addChild(icon);
-            const label = PixiPremiumScene.text(action.label, { fontSize: 20, fontWeight: '900', fill: cols.text });
+            const label = PixiPremiumScene.text(action.label, { fontSize: 20, fontWeight: '900', fill: action.danger ? '#ff6578' : cols.text });
             label.x = 84;
             label.y = 20;
-            PixiPremiumScene.fit(label, 140);
+            PixiPremiumScene.fit(label, lCardW - 100);
             card.addChild(label);
-            const sub = PixiPremiumScene.text(action.sub, { fontSize: 14, fill: PixiPremiumScene.alpha(cols.text, '88') });
+            const sub = PixiPremiumScene.text(action.sub, { fontSize: 14, fill: PixiPremiumScene.alpha(action.danger ? '#ff6578' : cols.text, '88') });
             sub.x = 84;
             sub.y = 50;
-            PixiPremiumScene.fit(sub, 140, 0.55);
+            PixiPremiumScene.fit(sub, lCardW - 100, 0.55);
             card.addChild(sub);
           },
         });
@@ -306,6 +322,7 @@ const SettingsScreen = {
     });
     slider.x = x;
     slider.y = y;
+    slider._valueText.visible = false;
     const percent = PixiPremiumScene.text(`${Math.round(value * 100)}%`, { fontSize: 18, fontWeight: '900', fill: cols.accent });
     percent.anchor.set(1, 0);
     percent.x = x + width;
