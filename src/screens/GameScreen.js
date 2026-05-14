@@ -860,13 +860,10 @@ const GameScreen = {
     }
 
     if (isCapture && !this.gameplayMode && Math.random() < 0.3 && MiniGameManager.shouldTriggerMiniGame()) {
-      const isAIMode = this.mode === 'story' || this.mode === 'classic' || this.mode === 'custom';
-      const isAIAttacking = isAIMode && this.turn === this.aiColor;
-
       this.pendingRevertMove = { move, piece, captured };
       miniGameManager.startMiniGame(
         piece, captured, move.to,
-        isAIAttacking,
+        false,
         (winner) => {
           if (winner === 'attacker') {
             this.executeCaptureMove(move, piece, captured);
@@ -888,18 +885,26 @@ const GameScreen = {
     if ((this.defensiveMiniGames[captured.color] || 0) <= 0) return false;
 
     const isAIMode = this.mode === 'story' || this.mode === 'classic' || this.mode === 'custom';
-    const challengePlayerIsAI = isAIMode && captured.color === this.aiColor;
+    const humanIsCapturing = isAIMode && captured.color === this.aiColor;
     const started = miniGameManager.startDefensiveMiniGame({
       attacker: piece,
       defender: captured,
       boardPos: move.to,
-      challengePlayerIsAI,
+      challengePlayerIsAI: false,
       botSkillLevel: this.characterLevel,
     }, (result) => {
-      if (result === 'defended') {
-        this.cancelCaptureAndPassTurn(move, piece, captured);
+      if (humanIsCapturing) {
+        if (result === 'defended') {
+          this.executeCaptureMove(move, piece, captured);
+        } else {
+          this.cancelCaptureAndPassTurn(move, piece, captured);
+        }
       } else {
-        this.executeCaptureMove(move, piece, captured);
+        if (result === 'defended') {
+          this.cancelCaptureAndPassTurn(move, piece, captured);
+        } else {
+          this.executeCaptureMove(move, piece, captured);
+        }
       }
       if (isAIMove) {
         this.aiThinking = false;
@@ -1190,12 +1195,12 @@ const GameScreen = {
         if (isCapture && !this.gameplayMode && Math.random() < 0.3 && MiniGameManager.shouldTriggerMiniGame()) {
           miniGameManager.startMiniGame(
             piece, captured, move.to,
-            true,
+            false,
             (winner) => {
               if (winner === 'attacker') {
-                this.executeCaptureMove(move, piece, captured);
-              } else {
                 this.revertMoveAndLockTile(move);
+              } else {
+                this.executeCaptureMove(move, piece, captured);
               }
               this.aiThinking = false;
               this.aiCooldown = 600;

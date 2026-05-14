@@ -8,7 +8,7 @@ class MemoryMatch {
     this.matched = [];
     this.canFlip = true;
     this.attempts = 0;
-    this.maxAttempts = 8;
+    this.maxAttempts = 12;
     this.pairs = 0;
     this.totalPairs = 4;
     this.flipAnims = {};
@@ -45,7 +45,7 @@ class MemoryMatch {
     }
     if (this.matched.length === this.totalPairs * 2) {
       this.done = true;
-      const maxAttempts = this.totalPairs + 4 - Math.floor((this.difficulty || 1) / 3);
+      const maxAttempts = this.totalPairs + 5 - Math.floor((this.difficulty || 1) / 4);
       this.winner = this.attempts <= maxAttempts ? 'attacker' : 'defender';
     }
     if (this.attempts >= this.maxAttempts && this.pairs < this.totalPairs) {
@@ -154,7 +154,7 @@ class MemoryMatch {
         audioManager.playTone(800, 0.1, 'square', 0.08);
         if (this.pairs === this.totalPairs) {
           this.done = true;
-          const maxAttempts = this.totalPairs + 4 - Math.floor((this.difficulty || 1) / 3);
+          const maxAttempts = this.totalPairs + 5 - Math.floor((this.difficulty || 1) / 4);
           this.winner = this.attempts <= maxAttempts ? 'attacker' : 'defender';
         }
       } else {

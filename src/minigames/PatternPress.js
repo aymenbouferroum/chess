@@ -24,15 +24,17 @@ class PatternPress {
     this._lastPalette = null;
   }
 
-  init(attacker, defender) {
+  init(attacker, defender, difficulty, isDuel) {
     this.done = false;
     this.winner = null;
+    this.difficulty = difficulty || 1;
     this.sequence = [];
     this.playerSequence = [];
     this.showing = false;
     this.waitingForInput = false;
     this.currentStep = 0;
-    this.length = 3;
+    this.length = Math.min(3 + Math.floor((this.difficulty - 1) / 3), 5);
+    this.maxLength = isDuel ? 8 : 6;
     this.shakeTimer = 0;
     this.shakeX = 0;
     this.shakeY = 0;

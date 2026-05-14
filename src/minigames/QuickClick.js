@@ -50,8 +50,8 @@ class QuickClick {
     if (!this.running || this.done) return;
     this.timeLeft = 5 - (Date.now() - this.startTime) / 1000;
 
-    // CPU auto-clicks for defender (scales with difficulty)
-    const cpuRate = dt * (1.5 + (this.difficulty || 1) * 0.8);
+    // CPU auto-clicks for defender (gentle scaling — beatable at all difficulties)
+    const cpuRate = dt * (0.8 + (this.difficulty || 1) * 0.35);
     if (Math.random() < cpuRate) {
       this.p2Clicks++;
       this.p2ShakeTimer = 0.15;

@@ -28,13 +28,16 @@ class ReactionTest {
     this._lastAreaH = 120;
   }
 
-  init(attacker, defender) {
+  init(attacker, defender, difficulty, isDuel) {
     this.done = false;
     this.winner = null;
+    this.difficulty = difficulty || 1;
     this.state = 'waiting';
     this.timer = 0;
     this.reactionTime = 0;
     this.trials = 0;
+    this.maxTrials = isDuel ? 5 : 3;
+    this.targetTime = Math.max(400, 1200 - (this.difficulty - 1) * 60);
     this.totalTime = 0;
     this.shakeTimer = 0;
     this.shakeX = 0;

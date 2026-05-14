@@ -25,7 +25,7 @@ class CoinFlip {
     this.flipResult = null;
     this.playerChoice = null;
     this.difficulty = difficulty || 1;
-    this.maxRounds = (isDuel ? 5 : 3) + Math.floor(this.difficulty / 2);
+    this.maxRounds = isDuel ? 5 : 3;
     this.sparkles = [];
     if (audioManager) audioManager.playMiniGameStart();
   }
@@ -91,9 +91,7 @@ class CoinFlip {
     audioManager.playTone(400, 0.05, 'square', 0.05);
 
     setTimeout(() => {
-      // Subtle bias based on difficulty (43-57% win chance range)
-      const winChance = 0.5 + (5 - (this.difficulty || 5)) * 0.015;
-      const playerWins = Math.random() < winChance;
+      const playerWins = Math.random() < 0.5;
       this.pendingResult = playerWins ? this.playerChoice : (this.playerChoice === 'heads' ? 'tails' : 'heads');
 
       setTimeout(() => {

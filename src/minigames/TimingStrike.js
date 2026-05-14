@@ -15,13 +15,15 @@ class TimingStrike {
     this.flashTimer = 0;
   }
 
-  init(attacker, defender) {
+  init(attacker, defender, difficulty, isDuel) {
     this.done = false;
     this.winner = null;
+    this.difficulty = difficulty || 1;
     this.pos = 0;
-    this.speed = 2.5;
+    this.speed = 2.0 + (this.difficulty - 1) * 0.15;
     this.direction = 1;
     this.strikes = 0;
+    this.maxStrikes = isDuel ? 5 : 3;
     this.score = 0;
     this.waitingForStrike = true;
     this.particles = [];
