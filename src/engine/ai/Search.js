@@ -29,8 +29,8 @@ class Search {
 
   static mvvLvaScore(move, board) {
     if (!move.captured) return 0;
-    const attackerVal = this.PIECE_ATTACK_ORDER[board.grid[move.from.row][move.from.col]?.type] || 6;
-    const victimVal = this.PIECE_ATTACK_ORDER[move.captured.type] || 1;
+    const victimVal = Evaluate.PIECE_VALUES[move.captured.type] || 100;
+    const attackerVal = Evaluate.PIECE_VALUES[board.grid[move.from.row][move.from.col]?.type] || 100;
     return victimVal * 10 - attackerVal;
   }
 
@@ -93,9 +93,9 @@ class Search {
 
     for (const move of orderedMoves) {
       if (this.shouldAbort()) break;
-      const sim = board.clone();
-      MoveExecutor.executeMove(sim, move, isMaximizing ? color : (color === 'white' ? 'black' : 'white'));
-      const { score } = this.search(sim, depth - 1, color, alpha, beta, !isMaximizing);
+      board.makeMove(move);
+      const { score } = this.search(board, depth - 1, color, alpha, beta, !isMaximizing);
+      board.unmakeMove();
 
       if (isMaximizing) {
         if (score > bestScore) {
@@ -151,13 +151,16 @@ class Search {
       if (isMaximizing && standPat + delta < alpha) continue;
       if (!isMaximizing && standPat - delta > beta) continue;
 
-      const sim = board.clone();
-      MoveExecutor.executeMoveRaw(sim, move);
-      const king = sim.findKing(moveColor);
-      if (!king) continue;
-      if (MoveGen.isSquareAttacked(sim, king.row, king.col, moveColor === 'white' ? 'black' : 'white')) continue;
+      board.makeMove(move);
+      // Check if move was legal (didn't leave own king in check)
+      const ownKing = board.findKing(moveColor);
+      if (ownKing && MoveGen.isSquareAttacked(board, ownKing.row, ownKing.col, moveColor === 'white' ? 'black' : 'white')) {
+        board.unmakeMove();
+        continue;
+      }
 
-      const score = this.quiescence(sim, color, alpha, beta, !isMaximizing, qDepth + 1);
+      const score = this.quiescence(board, color, alpha, beta, !isMaximizing, qDepth + 1);
+      board.unmakeMove();
 
       if (isMaximizing) {
         if (score >= beta) return beta;
@@ -172,12 +175,15 @@ class Search {
   }
 
   static evaluateMove(board, color, move, depth) {
-    const sim = board.clone();
-    MoveExecutor.executeMove(sim, move, color);
+    board.makeMove(move);
+    let score;
     if (depth <= 1) {
-      return Evaluate.evaluate(sim, color);
+      score = Evaluate.evaluate(board, color);
+    } else {
+      const result = this.search(board, depth - 1, color, -Infinity, Infinity, false);
+      score = result.score;
     }
-    const { score } = this.search(sim, depth - 1, color, -Infinity, Infinity, false);
+    board.unmakeMove();
     return score;
   }
 
@@ -203,6 +209,7 @@ class Search {
     // Iterative deepening
     let bestMove = sortedMoves[0];
     for (let d = 2; d <= depth; d++) {
+      this.maxDepth = d;
       if (this.shouldAbort()) break;
       const result = this.search(board, d, color, -Infinity, Infinity, true, sortedMoves);
       if (result.move && !this.abortSearch) {
@@ -217,6 +224,7 @@ class Search {
     this.nodesSearched = 0;
     this.abortSearch = false;
     this.startTime = Date.now();
+    this.maxDepth = depth;
     this.applyLimits(depth);
     const moves = GameRules.getLegalMoves(board, color);
     if (moves.length === 0) return null;
@@ -259,6 +267,7 @@ class Search {
     const sortedMoves = scored.map(s => s.move);
     let bestMove = sortedMoves[0];
     for (let d = 2; d <= depth; d++) {
+      this.maxDepth = d;
       if (this.shouldAbort()) break;
       const result = this.search(board, d, color, -Infinity, Infinity, true, sortedMoves);
       if (result.move && !this.abortSearch) {
