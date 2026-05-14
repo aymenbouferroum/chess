@@ -44,4 +44,8 @@ const PixiColorUtil = {
     }
     return 1;
   },
+
+  alphaFill(hex, alphaHex) {
+    return { color: this.hexToNum(hex), alpha: this.alphaFloat(alphaHex) };
+  },
 };

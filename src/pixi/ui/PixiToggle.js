@@ -80,4 +80,10 @@ class PixiToggle extends PIXI.Container {
     const dotColor = isOn ? 0xffffff : PixiColorUtil.hexToNum(PixiColorUtil.alpha(cols.text, '44'));
     g.rect(knobX + Math.floor(h / 2) - 1, Math.floor(h / 2) - 1, 2, 2).fill(dotColor);
   }
+
+  destroy(options) {
+    this.off('pointerdown');
+    this._changeHandler = null;
+    super.destroy(options);
+  }
 }

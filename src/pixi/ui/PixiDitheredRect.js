@@ -8,14 +8,22 @@ class PixiDitheredRect extends PIXI.Container {
       alpha: 0.2,
     }, config);
 
-    this._sprite = null;
-    this._draw();
+    // Create canvas, texture, and sprite once
+    this._canvas = document.createElement('canvas');
+    this._canvas.width = 2;
+    this._canvas.height = 2;
+
+    this._texture = PIXI.Texture.from({ resource: this._canvas, scaleMode: 'nearest' });
+    this._sprite = new PIXI.TilingSprite({ texture: this._texture, width: this.config.width, height: this.config.height });
+    this.addChild(this._sprite);
+
+    this._updatePattern();
   }
 
   setColor(color, alpha) {
     this.config.color = color;
     if (alpha !== undefined) this.config.alpha = alpha;
-    this._draw();
+    this._updatePattern();
   }
 
   resize(w, h) {
@@ -27,23 +35,23 @@ class PixiDitheredRect extends PIXI.Container {
     }
   }
 
-  _draw() {
-    if (this._sprite) {
-      this.removeChild(this._sprite);
-      this._sprite.destroy(true);
-    }
-
-    const canvas = document.createElement('canvas');
-    canvas.width = 2;
-    canvas.height = 2;
-    const ctx = canvas.getContext('2d');
+  _updatePattern() {
+    const ctx = this._canvas.getContext('2d');
+    ctx.clearRect(0, 0, 2, 2);
     ctx.fillStyle = this.config.color;
     ctx.globalAlpha = this.config.alpha;
     ctx.fillRect(0, 0, 1, 1);
     ctx.fillRect(1, 1, 1, 1);
 
-    const texture = PIXI.Texture.from({ resource: canvas, scaleMode: 'nearest' });
-    this._sprite = new PIXI.TilingSprite({ texture, width: this.config.width, height: this.config.height });
-    this.addChild(this._sprite);
+    this._texture.source.update();
+  }
+
+  destroy(options) {
+    if (this._texture) {
+      this._texture.destroy(true);
+      this._texture = null;
+    }
+    this._canvas = null;
+    super.destroy(options);
   }
 }

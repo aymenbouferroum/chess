@@ -104,4 +104,14 @@ class PixiScrollableList extends PIXI.Container {
     // Thumb
     g.rect(barX, thumbY, 4, thumbH).fill({ color: 0xffffff, alpha: 0.3 });
   }
+
+  destroy(options) {
+    this._dragging = false;
+    this.off('wheel');
+    this.off('pointerdown');
+    this.off('globalpointermove');
+    this.off('pointerup');
+    this.off('pointerupoutside');
+    super.destroy(options);
+  }
 }

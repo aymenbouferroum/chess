@@ -113,10 +113,8 @@ class PixiButton extends PIXI.Container {
 
     if (this._isPressed) {
       this.scale.set(0.97);
-      this.pivot.set(this.config.width * 0.015, this.config.height * 0.015);
     } else {
       this.scale.set(1);
-      this.pivot.set(0, 0);
     }
   }
 
@@ -180,5 +178,14 @@ class PixiButton extends PIXI.Container {
         .rect(w - I - 2, I, 2, h - I * 2)
         .fill(PixiColorUtil.hexToNum(cols.accent));
     }
+  }
+
+  destroy(options) {
+    this.off('pointerover');
+    this.off('pointerout');
+    this.off('pointerdown');
+    this.off('pointerup');
+    this._clickHandler = null;
+    super.destroy(options);
   }
 }

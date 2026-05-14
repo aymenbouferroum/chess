@@ -143,4 +143,14 @@ class PixiDialogueBubble extends PIXI.Container {
       },
     });
   }
+
+  destroy(options) {
+    if (this._dismissTimer) {
+      clearTimeout(this._dismissTimer);
+      this._dismissTimer = null;
+    }
+    gsap.killTweensOf(this);
+    this._dismissed = true;
+    super.destroy(options);
+  }
 }

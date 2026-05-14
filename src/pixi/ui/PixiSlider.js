@@ -14,6 +14,8 @@ class PixiSlider extends PIXI.Container {
       gradientStops: null,
       showTicks: false,
       tickInterval: 10,
+      showValue: true,
+      disabled: false,
     }, config);
 
     this._value = this.config.value;
@@ -194,5 +196,22 @@ class PixiSlider extends PIXI.Container {
     const frac = Math.max(0, Math.min(1, (local.x - 2) / (this.config.width - 4)));
     const raw = this.config.min + frac * (this.config.max - this.config.min);
     this.setValue(raw);
+  }
+
+  setDisabled(disabled) {
+    this.config.disabled = disabled;
+    this.alpha = disabled ? 0.5 : 1;
+    this.cursor = disabled ? 'default' : 'pointer';
+    this.eventMode = disabled ? 'none' : 'static';
+  }
+
+  destroy(options) {
+    this._dragging = false;
+    this.off('pointerdown');
+    this.off('globalpointermove');
+    this.off('pointerup');
+    this.off('pointerupoutside');
+    this._changeHandler = null;
+    super.destroy(options);
   }
 }
